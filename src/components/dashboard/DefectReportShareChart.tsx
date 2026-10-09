@@ -1,0 +1,146 @@
+
+import { useMemo, useState } from "react";
+import {
+    BarChart,
+    Bar,
+    XAxis,
+    YAxis,
+    CartesianGrid,
+    Tooltip,
+    ResponsiveContainer,
+    LabelList,
+} from "recharts";
+
+import type { Defect } from "../../utils/dashboardAnalytics";
+
+type GroupBy = "Car Model" | "Motor Type" | "Design Package";
+
+export default function DefectReportShareChart({
+                                                   defects,
+                                               }: {
+    defects: Defect[];
+}) {
+    const [groupBy, setGroupBy] = useState<GroupBy>("Car Model");
+
+    const data = useMemo(() => {
+        const counts = new Map<string, number>();
+
+        for (const defect of defects) {
+            const name = defect[groupBy]?.trim() || "Unknown";
+            counts.set(name, (counts.get(name) ?? 0) + 1);
+        }
+
+        const totalReports = defects.length;
+
+        return Array.from(counts, ([name, count]) => ({
+            name,
+            count,
+            percentage: totalReports > 0
+                ? (count / totalReports) * 100
+                : 0,
+        })).sort((a, b) => b.percentage - a.percentage);
+    }, [defects, groupBy]);
+
+    return (
+        <div className="h-full min-w-0 rounded-xl border border-white/10 bg-[#191a22] p-5">
+            <div className="mb-5 flex flex-wrap items-center justify-between gap-3">
+                <div>
+                    <h3 className="text-sm font-semibold text-white">
+                        Defect Report Share (%)
+                    </h3>
+                    <p className="mt-1 text-xs text-zinc-500">
+                        Percentage of all defect reports by vehicle attribute
+                    </p>
+                </div>
+
+                <select
+                    value={groupBy}
+                    onChange={(e) => setGroupBy(e.target.value as GroupBy)}
+                    className="rounded-lg border border-white/10 bg-[#252631] px-3 py-2 text-xs text-white outline-none"
+                >
+                    <option value="Car Model">Car Model</option>
+                    <option value="Motor Type">Motor Type</option>
+                    <option value="Design Package">Design Package</option>
+                </select>
+            </div>
+
+            {data.length === 0 ? (
+                <div className="flex h-64 items-center justify-center text-sm text-zinc-500">
+                    No defect reports in the selected period.
+                </div>
+            ) : (
+                <div style={{ height: Math.max(220, data.length * 45) }}>
+                    <ResponsiveContainer width="100%" height="100%">
+                        <BarChart
+                            data={data}
+                            layout="vertical"
+                            margin={{ top: 5, right: 55, left: 10, bottom: 5 }}
+                        >
+                            <CartesianGrid
+                                stroke="#292a35"
+                                horizontal={false}
+                            />
+
+                            <XAxis
+                                type="number"
+                                domain={[0, 100]}
+                                tickFormatter={(value) => `${value}%`}
+                                tick={{ fill: "#a1a1aa", fontSize: 11 }}
+                            />
+
+                            <YAxis
+                                type="category"
+                                dataKey="name"
+                                width={110}
+                                tick={{ fill: "#a1a1aa", fontSize: 11 }}
+                                axisLine={false}
+                                tickLine={false}
+                            />
+
+                            <Tooltip
+                                formatter={(value, name, item) => {
+                                    if (name === "percentage") {
+                                        return [
+                                            `${Number(value).toFixed(1)}% (${item.payload.count} reports)`,
+                                            "Report share",
+                                        ];
+                                    }
+
+                                    return [value, name];
+                                }}
+                                contentStyle={{
+                                    backgroundColor: "#1e1e29",
+                                    border: "1px solid #383846",
+                                    borderRadius: 8,
+                                    color: "#fff",
+                                }}
+                            />
+
+                            <Bar
+                                dataKey="percentage"
+                                fill="#8b5cf6"
+                                radius={[0, 4, 4, 0]}
+                                barSize={20}
+                            >
+                                <LabelList
+                                    dataKey="percentage"
+                                    position="right"
+                                    fill="#d4d4d8"
+                                    fontSize={11}
+                                    formatter={(value) => `${Number(value).toFixed(1)}%`}
+                                />
+                            </Bar>
+                        </BarChart>
+                    </ResponsiveContainer>
+                </div>
+            )}
+
+            <p className="mt-4 text-xs leading-relaxed text-zinc-500">
+                Denominator: all defect reports in the selected date range
+                ({defects.length.toLocaleString()} reports).
+                Percentages represent the share of reported defects, not
+                the percentage of manufactured vehicles with defects.
+            </p>
+        </div>
+    );
+}
