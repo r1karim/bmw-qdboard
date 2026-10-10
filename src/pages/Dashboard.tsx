@@ -1,7 +1,4 @@
-
-import { useEffect, useState } from "react";
 import { ClipboardList, CarFront, Clock3 } from "lucide-react";
-
 import KpiCard from "../components/dashboard/KpiCard";
 import DefectsByModelChart from "../components/dashboard/DefectsByModelChart";
 import ResolutionStatusChart from "../components/dashboard/ResolutionStatusChart";
@@ -10,12 +7,12 @@ import DefectReportsTrendChart from "../components/dashboard/DefectReportsTrendC
 import DefectReportShareChart from "../components/dashboard/DefectReportShareChart.tsx";
 import ResolutionTimeByStationChart from "../components/dashboard/ResolutionTimeByStationChart";
 import TopFiveDefectsChart from "../components/dashboard/TopFiveDefectsChart";
+import { useDefects } from "../context/DefectsContext";
 import { useDateRange } from "../context/DateRangeContext";
 import {
     filterByDate,
     countBy,
     createTrendData,
-    type Defect,
 } from "../utils/dashboardAnalytics";
 
 const statusColors: Record<string, string> = {
@@ -25,21 +22,9 @@ const statusColors: Record<string, string> = {
 };
 
 export default function Dashboard() {
-    const [defects, setDefects] = useState<Defect[]>([]);
+    const { defects, loading, error } = useDefects();
     const { dateRange } = useDateRange();
 
-    // Load the full dataset once
-    useEffect(() => {
-        fetch("/data/defects.json")
-            .then((response) => {
-                if (!response.ok) {
-                    throw new Error("Failed to load defects");
-                }
-                return response.json();
-            })
-            .then((data: Defect[]) => setDefects(data))
-            .catch(console.error);
-    }, []);
 
     // Filter all records by the selected date range
     const filteredDefects = filterByDate(
@@ -79,9 +64,11 @@ export default function Dashboard() {
         dateRange.end
     );
 
+    if (loading) return <p className="text-gray-400">Loading dashboard...</p>;
+    if (error) return <p className="text-red-400">{error}</p>;
+
     return (
         <div className="w-full min-w-0 space-y-4">
-            {/* KPI cards */}
             <section className="grid grid-cols-1 gap-3 sm:grid-cols-2 xl:grid-cols-3">
                 <KpiCard
                     title="Defect Reports"

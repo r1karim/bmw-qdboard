@@ -27,7 +27,7 @@ export function countBy(
     field: keyof Defect
 ): Record<string, number> {
     return defects.reduce<Record<string, number>>((counts, d) => {
-        const value = d[field]?.trim() || "Unknown";
+        const value = String(d[field] ?? "").trim() || "Unknown";
         counts[value] = (counts[value] || 0) + 1;
         return counts;
     }, {});

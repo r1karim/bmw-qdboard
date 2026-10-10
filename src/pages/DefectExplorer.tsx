@@ -1,25 +1,11 @@
-
-import { useEffect, useState } from "react";
+import { useDefects } from "../context/DefectsContext";
 import DefectsTable, {
-    type DefectRow,
 } from "../components/defects/DefectsTable";
 
 export default function DefectExplorer() {
-    const [defects, setDefects] = useState<DefectRow[]>([]);
-    const [loading, setLoading] = useState(true);
-    const [error, setError] = useState(false);
-
-    useEffect(() => {
-        fetch("/data/defects.json")
-            .then((response) => {
-                if (!response.ok) throw new Error("Failed to load defects");
-                return response.json();
-            })
-            .then((data: DefectRow[]) => setDefects(data))
-            .catch(() => setError(true))
-            .finally(() => setLoading(false));
-    }, []);
-
+    const { defects, loading, error } = useDefects();
+    if (loading) return <p className="text-gray-400">Loading dashboard...</p>;
+    if (error) return <p className="text-red-400">{error}</p>;
     return (
         <div className="w-full min-w-0 space-y-5">
             <div>
@@ -27,16 +13,7 @@ export default function DefectExplorer() {
                     Search and sort BMW production quality records.
                 </p>
             </div>
-
-            {loading ? (
-                <p className="text-sm text-zinc-400">Loading defects...</p>
-            ) : error ? (
-                <p className="text-sm text-red-400">
-                    Failed to load defect records.
-                </p>
-            ) : (
-                <DefectsTable defects={defects} />
-            )}
+            <DefectsTable defects={defects} />
         </div>
     );
 }
