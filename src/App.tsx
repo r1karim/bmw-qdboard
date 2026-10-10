@@ -3,6 +3,7 @@ import MainLayout from "./components/layout/MainLayout";
 import Dashboard from "./pages/Dashboard";
 import DefectExplorer from "./pages/DefectExplorer.tsx";
 import OutlierDetection from "./pages/OutlierDetection.tsx";
+import Tracking from "./pages/Tracking";
 
 export default function App() {
     return (
@@ -12,6 +13,7 @@ export default function App() {
                     <Route path="/" element={<Dashboard />} />
                     <Route path="/defects" element={<DefectExplorer />} />
                     <Route path="/outliers" element={<OutlierDetection />} />
+                    <Route path="/tracking" element={<Tracking />} />
                     <Route path="*" element={<Navigate to="/" replace />} />
                 </Routes>
             </MainLayout>

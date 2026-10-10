@@ -13,7 +13,7 @@ const navigation = [
     { name: "Overview", path: "/", icon: LayoutDashboard },
     { name: "Defect Explorer", path: "/defects", icon: Table2 },
     { name: "Outlier Detection", path: "/outliers", icon: ScanSearch },
-    { name: "Investigations", path: "/investigations", icon: ClipboardCheck },
+    { name: "Tracking", path: "/tracking", icon: ClipboardCheck },
     { name: "Research & Insights", path: "/insights", icon: FlaskConical },
 ];
 
