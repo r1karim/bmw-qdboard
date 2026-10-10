@@ -7,6 +7,7 @@ import { detectVin } from "./vin";
 export type {  OutlierItem, OutlierMetric, OutlierResult } from "./types";
 
 export function detectOutliers(
+    filteredDefects: Defect[],
     defects: Defect[],
     metric: OutlierMetric,
     multiplier = 1.5,
@@ -16,10 +17,23 @@ export function detectOutliers(
 ): OutlierResult {
     switch (metric) {
         case "severity":
-            return detectSeverity(defects, severityThreshold, unresolvedOnly);
+            return detectSeverity(
+                filteredDefects,
+                severityThreshold,
+                unresolvedOnly
+            );
         case "vin":
-            return detectVin(defects, unresolvedOnly);
+            return detectVin(
+                filteredDefects,
+                unresolvedOnly
+            );
         case "resolution":
-            return detectResolution(defects, multiplier, unresolvedOnly, referenceDate);
+            return detectResolution(
+                filteredDefects,
+                multiplier,
+                unresolvedOnly,
+                referenceDate,
+                defects
+            );
     }
 }

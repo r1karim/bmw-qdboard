@@ -1,16 +1,24 @@
+
 import type { OutlierDefect, OutlierItem, OutlierResult } from "./types";
 import { getValidNumber, isUnresolved, makeItem, makeResult } from "./shared";
 
 function quantile(sorted: number[], p: number): number {
     if (sorted.length === 0) return 0;
+
     const index = (sorted.length - 1) * p;
     const lower = Math.floor(index);
     const upper = Math.ceil(index);
+
     if (lower === upper) return sorted[lower];
-    return sorted[lower] + (sorted[upper] - sorted[lower]) * (index - lower);
+
+    return sorted[lower] +
+        (sorted[upper] - sorted[lower]) * (index - lower);
 }
 
-function getDurationItems(defects: OutlierDefect[], referenceDate: Date): OutlierItem[] {
+function getDurationItems(
+    defects: OutlierDefect[],
+    referenceDate: Date
+): OutlierItem[] {
     return defects.flatMap((defect) => {
         const status = defect["Resolution Status"]?.trim().toLowerCase();
         let value: number | null = null;
@@ -21,8 +29,13 @@ function getDurationItems(defects: OutlierDefect[], referenceDate: Date): Outlie
             const reportDate = defect["Report Date"]?.slice(0, 10);
             const reportTime = defect["Report Time"] || "00:00:00";
             const reportedAt = new Date(`${reportDate}T${reportTime}`);
+
             if (Number.isNaN(reportedAt.getTime())) return [];
-            value = (referenceDate.getTime() - reportedAt.getTime()) / (1000 * 60 * 60);
+
+            value =
+                (referenceDate.getTime() - reportedAt.getTime()) /
+                (1000 * 60 * 60);
+
             if (value < 0) return [];
         } else {
             return [];
@@ -36,17 +49,42 @@ export function detectResolution(
     defects: OutlierDefect[],
     multiplier: number,
     unresolvedOnly: boolean,
-    referenceDate: Date
+    referenceDate: Date,
+    baselineDefects: OutlierDefect[] = defects
 ): OutlierResult {
-    const items = getDurationItems(defects, referenceDate);
-    const sorted = items.map((item) => item.value).sort((a, b) => a - b);
+    // Global baseline: independent of the selected date range.
+    const baselineItems = getDurationItems(
+        baselineDefects,
+        referenceDate
+    );
+
+    const sorted = baselineItems
+        .map((item) => item.value)
+        .sort((a, b) => a - b);
+
     const q1 = quantile(sorted, 0.25);
     const q3 = quantile(sorted, 0.75);
     const iqr = q3 - q1;
     const threshold = q3 + multiplier * iqr;
+
+    // Observations: only reports in the selected date range.
+    const items = getDurationItems(defects, referenceDate);
+
     const flagged = items
-        .filter((item) => item.value > threshold && (!unresolvedOnly || isUnresolved(item.status)))
+        .filter(
+            (item) =>
+                item.value > threshold &&
+                (!unresolvedOnly || isUnresolved(item.status))
+        )
         .sort((a, b) => b.value - a.value);
 
-    return makeResult("resolution", items, flagged, threshold, q1, q3, iqr);
+    return makeResult(
+        "resolution",
+        items,
+        flagged,
+        threshold,
+        q1,
+        q3,
+        iqr
+    );
 }

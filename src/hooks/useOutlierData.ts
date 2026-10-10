@@ -9,10 +9,19 @@ export default function useOutlierData() {
     const filteredDefects = useMemo(
         () => defects.filter((defect) => {
             const date = defect["Report Date"]?.slice(0, 10);
-            return Boolean(date && date >= dateRange.start && date <= dateRange.end);
+            return Boolean(
+                date &&
+                date >= dateRange.start &&
+                date <= dateRange.end
+            );
         }),
         [defects, dateRange.start, dateRange.end]
     );
 
-    return { filteredDefects, loading, error };
+    return {
+        defects,
+        filteredDefects,
+        loading,
+        error,
+    };
 }

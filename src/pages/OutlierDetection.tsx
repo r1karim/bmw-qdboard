@@ -6,15 +6,30 @@ import useOutlierData from "../hooks/useOutlierData";
 import { detectOutliers, type OutlierMetric } from "../utils/outlierAnalytics";
 
 export default function OutlierDetection() {
-    const { filteredDefects, loading, error } = useOutlierData();
-    const [metric, setMetric] = useState<OutlierMetric>("resolution");
+    const { defects, filteredDefects, loading, error } = useOutlierData();    const [metric, setMetric] = useState<OutlierMetric>("resolution");
     const [multiplier, setMultiplier] = useState(1.5);
     const [severityThreshold, setSeverityThreshold] = useState(2);
     const [unresolvedOnly, setUnresolvedOnly] = useState(false);
 
     const result = useMemo(
-        () => detectOutliers(filteredDefects, metric, multiplier, unresolvedOnly, undefined, severityThreshold),
-        [filteredDefects, metric, multiplier, unresolvedOnly, severityThreshold]
+        () =>
+            detectOutliers(
+                filteredDefects,
+                defects,
+                metric,
+                multiplier,
+                unresolvedOnly,
+                undefined,
+                severityThreshold
+            ),
+        [
+            filteredDefects,
+            defects,
+            metric,
+            multiplier,
+            unresolvedOnly,
+            severityThreshold,
+        ]
     );
 
     if (loading) return <p className="text-gray-400">Loading outlier data...</p>;
