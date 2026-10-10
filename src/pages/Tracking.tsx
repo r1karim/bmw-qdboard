@@ -6,13 +6,16 @@ import type { DefectRow } from "../components/defects/tableConfig";
 import DefectInvestigationPanel from "../components/tracking/DefectInvestigationPanel";
 import TrackingSummary from "../components/tracking/TrackingSummary";
 import TrackingTable from "../components/tracking/TrackingTable";
+import ChartSnapshotsTable from "../components/tracking/ChartSnapshotsTable";
 
 type StatusFilter = "All" | InvestigationStatus;
 type SortBy = "recent" | "oldest" | "severity" | "id";
+type TrackingTab = "defects" | "snapshots";
 
 export default function Tracking() {
     const { defects, loading, error } = useDefects();
     const { records, unflag } = useTracking();
+    const [tab, setTab] = useState<TrackingTab>("defects");
     const [search, setSearch] = useState("");
     const [statusFilter, setStatusFilter] = useState<StatusFilter>("All");
     const [sortBy, setSortBy] = useState<SortBy>("recent");
@@ -42,7 +45,7 @@ export default function Tracking() {
                     if (!validLeft && !validRight) return 0;
                     if (!validLeft) return 1;
                     if (!validRight) return -1;
-                    return left - right; // Lower rating = higher severity.
+                    return left - right;
                 }
                 return b.record.updatedAt.localeCompare(a.record.updatedAt);
             });
@@ -59,31 +62,41 @@ export default function Tracking() {
         <div className="w-full min-w-0 space-y-5">
             <div>
                 <h1 className="text-xl font-semibold text-white">Investigation Tracking</h1>
-                <p className="mt-1 text-sm text-zinc-500">Manage flagged quality defects independently of manufacturing resolution.</p>
+                <p className="mt-1 text-sm text-zinc-500">Manage flagged quality defects and saved chart observations.</p>
             </div>
-            <TrackingSummary records={trackedRecords} />
-            <div className="rounded-xl border border-white/10 bg-[#191a22] p-5">
-                <div className="flex flex-wrap items-center justify-between gap-4">
-                    <p className="text-xs text-zinc-400">{items.length.toLocaleString()} of {trackedRecords.length.toLocaleString()} investigations</p>
-                    <div className="flex flex-wrap items-center gap-3">
-                        <label className="flex items-center gap-2 rounded-lg border border-white/10 bg-[#252631] px-3 py-2">
-                            <Search size={15} className="text-zinc-500" />
-                            <input aria-label="Search investigations" placeholder="Search investigations..." value={search} onChange={event => setSearch(event.target.value)} className="w-52 bg-transparent text-xs text-white outline-none placeholder:text-zinc-500" />
-                        </label>
-                        <select aria-label="Filter investigation status" value={statusFilter} onChange={event => setStatusFilter(event.target.value as StatusFilter)} className="rounded-lg border border-white/10 bg-[#252631] px-3 py-2 text-xs text-white">
-                            {["All", "To Review", "Investigating", "Closed"].map(status => <option key={status} value={status}>{status === "All" ? "All statuses" : status}</option>)}
-                        </select>
-                        <select aria-label="Sort investigations" value={sortBy} onChange={event => setSortBy(event.target.value as SortBy)} className="rounded-lg border border-white/10 bg-[#252631] px-3 py-2 text-xs text-white">
-                            <option value="recent">Recently updated</option>
-                            <option value="oldest">Oldest updated</option>
-                            <option value="severity">Highest severity</option>
-                            <option value="id">Defect ID</option>
-                        </select>
+            <div className="flex gap-2 border-b border-white/10 pb-3">
+                <button type="button" onClick={() => setTab("defects")} className={`rounded-lg px-4 py-2 text-sm transition-colors ${tab === "defects" ? "bg-violet-600 text-white" : "bg-white/5 text-zinc-400 hover:text-white"}`}>Flagged Defects</button>
+                <button type="button" onClick={() => setTab("snapshots")} className={`rounded-lg px-4 py-2 text-sm transition-colors ${tab === "snapshots" ? "bg-violet-600 text-white" : "bg-white/5 text-zinc-400 hover:text-white"}`}>Chart Snapshots</button>
+            </div>
+            {tab === "snapshots" ? (
+                <ChartSnapshotsTable />
+            ) : (
+                <>
+                    <TrackingSummary records={trackedRecords} />
+                    <div className="rounded-xl border border-white/10 bg-[#191a22] p-5">
+                        <div className="flex flex-wrap items-center justify-between gap-4">
+                            <p className="text-xs text-zinc-400">{items.length.toLocaleString()} of {trackedRecords.length.toLocaleString()} investigations</p>
+                            <div className="flex flex-wrap items-center gap-3">
+                                <label className="flex items-center gap-2 rounded-lg border border-white/10 bg-[#252631] px-3 py-2">
+                                    <Search size={15} className="text-zinc-500" />
+                                    <input aria-label="Search investigations" placeholder="Search investigations..." value={search} onChange={event => setSearch(event.target.value)} className="w-52 bg-transparent text-xs text-white outline-none placeholder:text-zinc-500" />
+                                </label>
+                                <select aria-label="Filter investigation status" value={statusFilter} onChange={event => setStatusFilter(event.target.value as StatusFilter)} className="rounded-lg border border-white/10 bg-[#252631] px-3 py-2 text-xs text-white">
+                                    {["All", "To Review", "Investigating", "Closed"].map(status => <option key={status} value={status}>{status === "All" ? "All statuses" : status}</option>)}
+                                </select>
+                                <select aria-label="Sort investigations" value={sortBy} onChange={event => setSortBy(event.target.value as SortBy)} className="rounded-lg border border-white/10 bg-[#252631] px-3 py-2 text-xs text-white">
+                                    <option value="recent">Recently updated</option>
+                                    <option value="oldest">Oldest updated</option>
+                                    <option value="severity">Highest severity</option>
+                                    <option value="id">Defect ID</option>
+                                </select>
+                            </div>
+                        </div>
                     </div>
-                </div>
-            </div>
-            <TrackingTable items={items} onEdit={setSelectedDefect} onUnflag={handleUnflag} />
-            <DefectInvestigationPanel defect={selectedDefect} onClose={() => setSelectedDefect(null)} />
+                    <TrackingTable items={items} onEdit={setSelectedDefect} onUnflag={handleUnflag} />
+                    <DefectInvestigationPanel defect={selectedDefect} onClose={() => setSelectedDefect(null)} />
+                </>
+            )}
         </div>
     );
 }
