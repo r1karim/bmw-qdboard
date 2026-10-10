@@ -1,14 +1,15 @@
 
-export type OutlierMetric = "resolution" | "rework" | "daily";
+export type OutlierMetric = "resolution" | "vin" | "severity";
 
 export type OutlierDefect = {
     "Defect ID": string;
     "Report Date": string;
+    "Report Time": string;
+    "Resolution Status": string;
+    "Resolution Time (hours)": number | string | null;
+    "Severity Rating": number | string | null;
     VIN: string;
     "Station Name": string;
-    "Resolution Time (hours)": number | string | null;
-    "Rework Time (minutes)": number | string | null;
-    "Resolution Status": string;
 };
 
 export type OutlierItem = {
@@ -18,6 +19,7 @@ export type OutlierItem = {
     date: string;
     vin?: string;
     station?: string;
+    status?: string;
 };
 
 export type OutlierResult = {
@@ -32,8 +34,6 @@ export type OutlierResult = {
     flagged: OutlierItem[];
 };
 
-// Linear interpolation between sorted values.
-// This matches the default percentile behavior used by pandas.
 function quantile(sorted: number[], p: number): number {
     if (sorted.length === 0) return 0;
 
@@ -49,22 +49,108 @@ function quantile(sorted: number[], p: number): number {
     );
 }
 
-function analyze(
-    items: OutlierItem[],
+function getValidNumber(value: unknown): number | null {
+    if (value === null || value === undefined || value === "") {
+        return null;
+    }
+
+    const number = Number(value);
+
+    return Number.isFinite(number) && number >= 0 ? number : null;
+}
+
+function isUnresolved(status?: string): boolean {
+    const normalized = status?.trim().toLowerCase();
+    return normalized === "open" || normalized === "in progress";
+}
+
+function makeItem(defect: OutlierDefect, value: number): OutlierItem {
+    return {
+        id: String(defect["Defect ID"]),
+        label: String(defect["Defect ID"]),
+        value,
+        date: defect["Report Date"]?.slice(0, 10) ?? "",
+        vin: defect.VIN,
+        station: defect["Station Name"],
+        status: defect["Resolution Status"],
+    };
+}
+
+function getDurationItems(
+    defects: OutlierDefect[],
+    referenceDate: Date
+): OutlierItem[] {
+    return defects.flatMap((defect) => {
+        const status = defect["Resolution Status"]?.trim().toLowerCase();
+        let value: number | null = null;
+
+        if (status === "resolved") {
+            value = getValidNumber(defect["Resolution Time (hours)"]);
+        } else if (isUnresolved(status)) {
+            const reportDate = defect["Report Date"]?.slice(0, 10);
+            const reportTime = defect["Report Time"] || "00:00:00";
+            const reportedAt = new Date(`${reportDate}T${reportTime}`);
+
+            if (Number.isNaN(reportedAt.getTime())) return [];
+
+            value =
+                (referenceDate.getTime() - reportedAt.getTime()) /
+                (1000 * 60 * 60);
+
+            if (value < 0) return [];
+        } else {
+            return [];
+        }
+
+        return value === null ? [] : [makeItem(defect, value)];
+    });
+}
+
+function getSeverityItems(defects: OutlierDefect[]): OutlierItem[] {
+    return defects.flatMap((defect) => {
+        const value = getValidNumber(defect["Severity Rating"]);
+
+        if (
+            value === null ||
+            !Number.isInteger(value) ||
+            value < 1 ||
+            value > 10
+        ) {
+            return [];
+        }
+
+        return [makeItem(defect, value)];
+    });
+}
+
+function getVinItems(defects: OutlierDefect[]): OutlierItem[] {
+    const counts = new Map<string, number>();
+
+    for (const defect of defects) {
+        const vin = defect.VIN?.trim();
+        if (!vin) continue;
+
+        counts.set(vin, (counts.get(vin) ?? 0) + 1);
+    }
+
+    return Array.from(counts, ([vin, count]) => ({
+        id: vin,
+        label: vin,
+        value: count,
+        date: "",
+        vin,
+    })).sort((a, b) => b.value - a.value);
+}
+
+function makeResult(
     metric: OutlierMetric,
-    multiplier: number
+    items: OutlierItem[],
+    flagged: OutlierItem[],
+    threshold: number,
+    q1 = 0,
+    q3 = 0,
+    iqr = 0
 ): OutlierResult {
-    const sorted = items.map((item) => item.value).sort((a, b) => a - b);
-
-    const q1 = quantile(sorted, 0.25);
-    const q3 = quantile(sorted, 0.75);
-    const iqr = q3 - q1;
-    const threshold = q3 + multiplier * iqr;
-
-    const flagged = items
-        .filter((item) => item.value > threshold)
-        .sort((a, b) => b.value - a.value);
-
     return {
         metric,
         threshold,
@@ -74,114 +160,86 @@ function analyze(
         total: items.length,
         flaggedCount: flagged.length,
         flaggedShare:
-            items.length > 0 ? (flagged.length / items.length) * 100 : 0,
+            items.length > 0
+                ? (flagged.length / items.length) * 100
+                : 0,
         flagged,
     };
 }
 
-function getValidNumber(value: unknown): number | null {
-    if (value === null || value === undefined || value === "") {
-        return null;
-    }
-
-    const number = Number(value);
-    return Number.isFinite(number) && number >= 0 ? number : null;
-}
-
-function getDurationItems(
-    defects: OutlierDefect[],
-    metric: "resolution" | "rework"
-): OutlierItem[] {
-    const column =
-        metric === "resolution"
-            ? "Resolution Time (hours)"
-            : "Rework Time (minutes)";
-
-    return defects.flatMap((defect) => {
-        const value = getValidNumber(defect[column]);
-
-        if (value === null) return [];
-
-        return [{
-            id: String(defect["Defect ID"]),
-            label: String(defect["Defect ID"]),
-            value,
-            date: defect["Report Date"]?.slice(0, 10) ?? "",
-            vin: defect.VIN,
-            station: defect["Station Name"],
-        }];
-    });
-}
-
-function getDailyItems(
-    defects: OutlierDefect[],
-    startDate: string,
-    endDate: string
-): OutlierItem[] {
-    const counts = new Map<string, number>();
-
-    for (const defect of defects) {
-        const date = defect["Report Date"]?.slice(0, 10);
-
-        if (date && date >= startDate && date <= endDate) {
-            counts.set(date, (counts.get(date) ?? 0) + 1);
-        }
-    }
-
-    const items: OutlierItem[] = [];
-    const current = new Date(`${startDate}T00:00:00Z`);
-    const end = new Date(`${endDate}T00:00:00Z`);
-
-    while (current <= end) {
-        const date = current.toISOString().slice(0, 10);
-
-        items.push({
-            id: date,
-            label: date,
-            value: counts.get(date) ?? 0,
-            date,
-        });
-
-        current.setUTCDate(current.getUTCDate() + 1);
-    }
-
-    return items;
-}
-
-/**
- * Detects unusually high values using Tukey's upper IQR fence.
- *
- * Threshold = Q3 + multiplier * (Q3 - Q1)
- *
- * The threshold is recalculated from the selected data rather than
- * using a fixed number of hours, minutes, or defect reports.
- *
- * Duration metrics exclude missing or invalid values.
- * Daily counts include zero-report days in the selected date range.
- *
- * Limitations:
- * - IQR detects statistical extremes, not confirmed quality failures.
- * - Daily counts are not normalized by production volume.
- * - A short date range may produce unstable thresholds.
- */
 export function detectOutliers(
     defects: OutlierDefect[],
     metric: OutlierMetric,
     multiplier = 1.5,
-    startDate?: string,
-    endDate?: string
+    unresolvedOnly = false,
+    referenceDate = new Date(2026, 5, 30, 23, 59, 59),
+    severityThreshold = 2
 ): OutlierResult {
-    if (metric === "daily") {
-        if (!startDate || !endDate || startDate > endDate) {
-            return analyze([], metric, multiplier);
-        }
-
-        return analyze(
-            getDailyItems(defects, startDate, endDate),
-            metric,
-            multiplier
+    if (metric === "severity") {
+        const items = getSeverityItems(defects);
+        const threshold = Math.max(
+            1,
+            Math.min(10, Math.round(severityThreshold))
         );
+
+        const flagged = items
+            .filter(
+                (item) =>
+                    item.value <= threshold &&
+                    (!unresolvedOnly || isUnresolved(item.status))
+            )
+            .sort((a, b) => a.value - b.value);
+
+        return makeResult("severity", items, flagged, threshold);
     }
 
-    return analyze(getDurationItems(defects, metric), metric, multiplier);
+    if (metric === "vin") {
+        const items = getVinItems(defects);
+
+        const unresolvedVins = new Set(
+            defects
+                .filter((defect) =>
+                    isUnresolved(defect["Resolution Status"])
+                )
+                .map((defect) => defect.VIN?.trim())
+                .filter((vin): vin is string => Boolean(vin))
+        );
+
+        const flagged = items.filter(
+            (item) =>
+                item.value > 1 &&
+                (!unresolvedOnly ||
+                    (item.vin !== undefined && unresolvedVins.has(item.vin)))
+        );
+
+        return makeResult("vin", items, flagged, 1);
+    }
+
+    const items = getDurationItems(defects, referenceDate);
+    const sorted = items
+        .map((item) => item.value)
+        .sort((a, b) => a - b);
+
+    const q1 = quantile(sorted, 0.25);
+    const q3 = quantile(sorted, 0.75);
+    const iqr = q3 - q1;
+    const threshold = q3 + multiplier * iqr;
+
+    const flagged = items
+        .filter(
+            (item) =>
+                item.value > threshold &&
+                (!unresolvedOnly || isUnresolved(item.status))
+        )
+        .sort((a, b) => b.value - a.value);
+
+    return makeResult(
+        "resolution",
+        items,
+        flagged,
+        threshold,
+        q1,
+        q3,
+        iqr
+    );
 }
