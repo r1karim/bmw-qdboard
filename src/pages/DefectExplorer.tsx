@@ -1,11 +1,18 @@
 import { useDefects } from "../context/DefectsContext";
-import DefectsTable, {
-} from "../components/defects/DefectsTable";
+import DefectsTable from "../components/defects/DefectsTable";
+import DefectFilters from "../components/defects/DefectFilters";
+import { useDefectFilters } from "../hooks/useDefectFilters";
 
 export default function DefectExplorer() {
     const { defects, loading, error } = useDefects();
-    if (loading) return <p className="text-gray-400">Loading dashboard...</p>;
+    const {
+        options, filteredDefects, selected, activeFilters,
+        updateFilter, clearAllFilters,
+    } = useDefectFilters(defects);
+
+    if (loading) return <p className="text-gray-400">Loading defects...</p>;
     if (error) return <p className="text-red-400">{error}</p>;
+
     return (
         <div className="w-full min-w-0 space-y-5">
             <div>
@@ -13,7 +20,16 @@ export default function DefectExplorer() {
                     Search and sort BMW production quality records.
                 </p>
             </div>
-            <DefectsTable defects={defects} />
+            <DefectFilters
+                options={options}
+                selected={selected}
+                activeFilters={activeFilters}
+                filteredCount={filteredDefects.length}
+                totalCount={defects.length}
+                onFilterChange={updateFilter}
+                onClearAll={clearAllFilters}
+            />
+            <DefectsTable defects={filteredDefects} />
         </div>
     );
 }

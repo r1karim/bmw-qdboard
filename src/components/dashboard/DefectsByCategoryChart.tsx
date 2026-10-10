@@ -1,4 +1,4 @@
-
+import { useNavigate } from "react-router";
 import {
     BarChart,
     Bar,
@@ -19,6 +19,7 @@ type Props = {
 };
 
 export default function DefectsByCategoryChart({ defects }: Props) {
+    const navigate = useNavigate();
     const counts = defects.reduce<Record<string, number>>(
         (acc, defect) => {
             const category = defect["Defect Category"]?.trim() || "Unknown";
@@ -75,6 +76,13 @@ export default function DefectsByCategoryChart({ defects }: Props) {
                         fill="#3b82f6"
                         radius={[0, 4, 4, 0]}
                         barSize={17}
+                        cursor="pointer"
+                        onClick={(entry) => {
+                            const category = entry?.category;
+                            if (typeof category === "string") {
+                                navigate(`/defects?category=${encodeURIComponent(category)}`);
+                            }
+                        }}
                     >
                         <LabelList
                             dataKey="count"

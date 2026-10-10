@@ -1,4 +1,3 @@
-
 import {
     BarChart,
     Bar,
@@ -8,6 +7,7 @@ import {
     Tooltip,
     ResponsiveContainer,
 } from "recharts";
+import { useNavigate } from "react-router";
 
 type Defect = {
     "Car Model": string;
@@ -18,9 +18,11 @@ type Props = {
 };
 
 export default function DefectsByModelChart({ defects }: Props) {
+    const navigate = useNavigate();
+
     const counts = defects.reduce<Record<string, number>>(
         (acc, defect) => {
-            const model = defect["Car Model"] || "Unknown";
+            const model = defect["Car Model"]?.trim() || "Unknown";
             acc[model] = (acc[model] || 0) + 1;
             return acc;
         },
@@ -68,6 +70,15 @@ export default function DefectsByModelChart({ defects }: Props) {
                             dataKey="count"
                             fill="#8b5cf6"
                             radius={[5, 5, 0, 0]}
+                            cursor="pointer"
+                            onClick={(entry) => {
+                                const model = String(entry.model ?? "");
+                                if (model) {
+                                    navigate(
+                                        `/defects?model=${encodeURIComponent(model)}`
+                                    );
+                                }
+                            }}
                         />
                     </BarChart>
                 </ResponsiveContainer>

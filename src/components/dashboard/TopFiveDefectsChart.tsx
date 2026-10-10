@@ -1,4 +1,3 @@
-
 import { useMemo } from "react";
 import {
     BarChart,
@@ -10,7 +9,7 @@ import {
     ResponsiveContainer,
     LabelList,
 } from "recharts";
-
+import { useNavigate } from "react-router";
 import type { Defect } from "../../utils/dashboardAnalytics";
 
 export default function TopFiveDefectsChart({
@@ -18,6 +17,7 @@ export default function TopFiveDefectsChart({
                                             }: {
     defects: Defect[];
 }) {
+    const navigate = useNavigate();
     const data = useMemo(() => {
         const counts = new Map<string, number>();
 
@@ -97,6 +97,16 @@ export default function TopFiveDefectsChart({
                                 fill="#8b5cf6"
                                 radius={[0, 4, 4, 0]}
                                 barSize={24}
+                                cursor="pointer"
+                                onClick={(entry) => {
+                                    const defectName = String(entry.name ?? "");
+
+                                    if (defectName) {
+                                        navigate(
+                                            `/defects?defectName=${encodeURIComponent(defectName)}`
+                                        );
+                                    }
+                                }}
                             >
                                 <LabelList
                                     dataKey="count"

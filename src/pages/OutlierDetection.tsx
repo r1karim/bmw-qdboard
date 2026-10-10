@@ -53,6 +53,7 @@ export default function OutlierDetection() {
                 flagged={result.flagged}
                 metric={metric}
                 threshold={result.threshold}
+                defects={filteredDefects}
             />
         </div>
     );
