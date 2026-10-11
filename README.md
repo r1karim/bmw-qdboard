@@ -18,6 +18,9 @@ The application provides interactive visualizations, defect filtering, statistic
 **Backend**
 - Python
 - FastAPI
+- Pydantic
+- OpenAI API (`gpt-4.1-mini`)
+- python-dotenv
 
 ## Features
 

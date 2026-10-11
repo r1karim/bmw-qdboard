@@ -151,3 +151,27 @@ export function createTrendData(
 
     return data;
 }
+
+
+/**
+ * Estimates production volume for the selected date range.
+ * Assumes approximately 300 vehicles are produced per calendar day.
+ *
+ * @param start - Inclusive start date in YYYY-MM-DD format.
+ * @param end - Inclusive end date in YYYY-MM-DD format.
+ * @returns Estimated number of vehicles produced.
+ */
+export function estimateProduction(start: string, end: string): number {
+    const startTime = Date.parse(`${start}T00:00:00Z`);
+    const endTime = Date.parse(`${end}T00:00:00Z`);
+
+    if (!Number.isFinite(startTime) || !Number.isFinite(endTime) || endTime < startTime) {
+        return 0;
+    }
+
+    const days = Math.round(
+        (endTime - startTime) / (24 * 60 * 60 * 1000)
+    ) + 1;
+
+    return days * 300;
+}

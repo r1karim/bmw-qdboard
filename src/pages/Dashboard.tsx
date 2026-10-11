@@ -1,4 +1,4 @@
-import { ClipboardList, CarFront, Clock3 } from "lucide-react";
+import { ClipboardList, CarFront, Clock3, Factory, Percent,CheckCircle2  } from "lucide-react";
 import KpiCard from "../components/dashboard/KpiCard";
 import DefectsByModelChart from "../components/dashboard/DefectsByModelChart";
 import ResolutionStatusChart from "../components/dashboard/ResolutionStatusChart";
@@ -7,17 +7,18 @@ import DefectReportsTrendChart from "../components/dashboard/DefectReportsTrendC
 import DefectReportShareChart from "../components/dashboard/DefectReportShareChart.tsx";
 import ResolutionTimeByStationChart from "../components/dashboard/ResolutionTimeByStationChart";
 import TopFiveDefectsChart from "../components/dashboard/TopFiveDefectsChart";
+import SeverityDistributionChart from "../components/dashboard/SeverityDistributionChart";
 import { useDefects } from "../context/DefectsContext";
 import { useDateRange } from "../context/DateRangeContext";
-import {filterByDate, countBy, createTrendData,} from "../utils/dashboardAnalytics";
+import {filterByDate, countBy, createTrendData, estimateProduction,} from "../utils/dashboardAnalytics";
 
 // Maps each resolution status to its corresponding chart color.
-
 const statusColors: Record<string, string> = {
     Resolved: "#8b5cf6",
     "In Progress": "#f59e0b",
     Open: "#ef4444",
 };
+
 
 /**
  * Main dashboard page displaying production quality KPIs and charts.
@@ -62,6 +63,8 @@ export default function Dashboard() {
         (statusCounts["Open"] || 0) +
         (statusCounts["In Progress"] || 0);
 
+    const resolvedReports = statusCounts["Resolved"] || 0;
+
     // Convert status counts into the format expected by the status chart.
     // Use a fallback color for any status not defined in statusColors.
     const statusData = Object.entries(statusCounts).map(
@@ -78,6 +81,18 @@ export default function Dashboard() {
         dateRange.start,
         dateRange.end
     );
+
+
+    // Estimate production for the currently selected dashboard date range.
+    const estimatedProduction = estimateProduction(
+        dateRange.start,
+        dateRange.end
+    );
+
+    // Calculate the estimated defective vehicle rate using unique affected VINs.
+    const defectiveVehicleRate = estimatedProduction > 0
+        ? (affectedVehicles / estimatedProduction) * 100
+        : 0;
 
     // Display feedback while the dataset is loading or if loading fails.
     if (loading) return <p className="text-gray-400">Loading dashboard...</p>;
@@ -107,6 +122,28 @@ export default function Dashboard() {
                     value={unresolvedReports}
                     icon={Clock3}
                     description="Open and in-progress defect reports"
+                />
+
+
+                <KpiCard
+                    title="Estimated Vehicles Produced"
+                    value={estimatedProduction}
+                    icon={Factory}
+                    description="Approx. 300 vehicles per selected calendar day"
+                />
+
+                <KpiCard
+                    title="Estimated Defective Vehicle Rate"
+                    value={`${defectiveVehicleRate.toFixed(2)}%`}
+                    icon={Percent}
+                    description="Affected vehicles / estimated production"
+                />
+
+                <KpiCard
+                    title="Resolved Reports"
+                    value={resolvedReports}
+                    icon={CheckCircle2 }
+                    description="Total of resolved reports"
                 />
             </section>
 
@@ -145,10 +182,12 @@ export default function Dashboard() {
 
                 {/* Highlight the five most frequently reported defects.
                     This chart spans both columns on extra-large screens. */}
-                <div className="min-w-0 xl:col-span-2">
+                <div className="min-w-0">
                     <TopFiveDefectsChart defects={filteredDefects} />
                 </div>
-
+                <div className="min-w-0">
+                    <SeverityDistributionChart defects={filteredDefects} />
+                </div>
             </section>
 
         </div>
