@@ -4,6 +4,9 @@ QdBoard is a web-based production quality analytics dashboard designed to suppor
 
 The application provides interactive visualizations, defect filtering, statistical outlier detection, VIN consistency checks, and engineering observation tracking. It also includes a Python-based backend for AI-assisted defect investigations.
 
+## Demo Video
+[![Watch the Demo](https://img.youtube.com/vi/dZ9uwIrFVfA/maxresdefault.jpg)](https://youtu.be/dZ9uwIrFVfA)
+
 ## Tech Stack
 
 **Frontend**
