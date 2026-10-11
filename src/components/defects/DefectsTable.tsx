@@ -1,13 +1,19 @@
-
 import { useState } from "react";
 import { DataGrid, type GridColDef } from "@mui/x-data-grid";
 import { Flag, MessageSquareText } from "lucide-react";
 import { useTracking } from "../../context/TrackingContext";
 import DefectInvestigationPanel from "../tracking/DefectInvestigationPanel";
 import { COLUMNS, type DefectRow } from "./tableConfig";
-
 export type { DefectRow } from "./tableConfig";
 
+/**
+ * Displays defect reports in an interactive MUI Data Grid.
+ *
+ * Supports searching, filtering, sorting, and pagination through MUI,
+ * as well as flagging defects and managing engineer notes.
+ *
+ * @param defects - Array of defect reports to display.
+ */
 export default function DefectsTable({ defects }: { defects: DefectRow[] }) {
     const { records } = useTracking();
     const [selectedDefect, setSelectedDefect] = useState<DefectRow | null>(null);

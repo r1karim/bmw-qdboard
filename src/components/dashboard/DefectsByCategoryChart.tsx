@@ -119,8 +119,8 @@ export default function DefectsByCategoryChart({ defects }: Props) {
                         barSize={17}
                         cursor="pointer"
                         onClick={(entry) => {
-                            const category = entry?.category;
-                            const count = entry?.count;
+                            const category = entry?.payload?.category;
+                            const count = entry?.payload?.count;
                             if (typeof category === "string" && typeof count === "number") {
                                 setSelected({ category, count });
                                 setShowNoteForm(false);

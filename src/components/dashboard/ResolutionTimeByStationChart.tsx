@@ -24,7 +24,7 @@ export default function ResolutionTimeByStationChart({defects,}: { defects: Defe
                 continue;
             }
 
-            const station = defect["Station ID"]
+            const station = defect["Station ID"] || 'Unknown';
             if (!stations.has(station)) {
                 stations.set(station, { totalHours: 0, count: 0 });
             }

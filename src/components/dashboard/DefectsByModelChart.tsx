@@ -72,7 +72,7 @@ export default function DefectsByModelChart({ defects }: Props) {
                             radius={[5, 5, 0, 0]}
                             cursor="pointer"
                             onClick={(entry) => {
-                                const model = String(entry.model ?? "");
+                                const model = String(entry.payload?.model ?? "");
                                 if (model) {
                                     navigate(
                                         `/defects?model=${encodeURIComponent(model)}`

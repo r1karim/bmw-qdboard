@@ -7,18 +7,38 @@ import TrackingSummary from "../components/tracking/TrackingSummary";
 import TrackingTable from "../components/tracking/TrackingTable";
 import ChartSnapshotsTable from "../components/tracking/ChartSnapshotsTable";
 
+// Restrict the available tabs to flagged defects and chart snapshots.
 type TrackingTab = "defects" | "snapshots";
 
+/**
+ * Investigation Tracking page for managing flagged quality defects
+ * and saved chart observations.
+ *
+ * Combines investigation records with their original defect reports,
+ * displays investigation summaries, and provides access to editing
+ * and removing tracked defects.
+ */
 export default function Tracking() {
+    // Retrieve the original defect reports and their loading/error states.
     const { defects, loading, error } = useDefects();
+
+    // Access saved investigation records and the function for removing them.
     const { records, unflag } = useTracking();
+
+    // Control which tracking section is currently displayed.
     const [tab, setTab] = useState<TrackingTab>("defects");
+
+    // Store the defect currently opened in the investigation panel.
     const [selectedDefect, setSelectedDefect] = useState<DefectRow | null>(null);
 
+    // Convert the saved investigation records into an array.
     const trackedRecords = useMemo(() => Object.values(records), [records]);
+
+    // Create a lookup map for finding original defect reports by Defect ID.
     const defectMap = useMemo(() => new Map(defects.map(defect => [String(defect["Defect ID"] ?? ""), defect as DefectRow])), [defects]);
 
-    // Connect saved investigation to their defect report
+    // Connect each saved investigation to its original defect report.
+    // If the original report is unavailable, its defect value is null.
     const items = useMemo(() =>
             trackedRecords.map(record => ({
                 record,
@@ -27,10 +47,13 @@ export default function Tracking() {
         [trackedRecords, defectMap]
     );
 
+    // Require confirmation before removing a defect from tracking.
+    // Unflagging also deletes the associated engineer note.
     function handleUnflag(defectId: string) {
         if (window.confirm(`Remove ${defectId} from tracking? Its engineer note will also be deleted.`)) unflag(defectId);
     }
 
+    // Handle loading and data retrieval errors.
     if (loading) return <p className="text-gray-400">Loading investigations...</p>;
     if (error) return <p className="text-red-400">{error}</p>;
 

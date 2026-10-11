@@ -1,5 +1,9 @@
 export type Defect = {
+    "Defect ID": string | number;
     VIN: string;
+    "Station ID"?: string;
+    "Report Time"?: string;
+    "Severity Rating"?: string | number;
     "Car Model": string;
     "Motor Type": string;
     "Design Package": string;

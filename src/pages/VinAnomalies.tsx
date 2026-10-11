@@ -5,20 +5,37 @@ import { AlertTriangle, ChevronDown, ChevronUp } from "lucide-react";
 import { useDefects } from "../context/DefectsContext";
 import { detectVinAnomalies } from "../utils/vinAnomalies";
 
+/**
+ * VIN Anomalies page for detecting inconsistent vehicle attributes
+ * across defect reports associated with the same VIN.
+ *
+ * Displays anomaly statistics, an interactive table of affected VINs,
+ * and expandable details showing conflicting values and source reports.
+ *
+ * The page identifies inconsistencies but does not determine which
+ * reported vehicle attributes are correct.
+ */
 export default function VinAnomalies() {
     const { defects, loading, error } = useDefects();
+
+    // Track the VIN whose detailed reports are currently displayed.
+    // Only one VIN can be expanded at a time.
     const [expandedVin, setExpandedVin] = useState<string | null>(null);
 
+    // Detect VINs with conflicting vehicle attributes across their reports.
+    // Recalculate only when the defect dataset changes.
     const anomalies = useMemo(
         () => detectVinAnomalies(defects),
         [defects]
     );
 
+    // Count all defect reports associated with anomalous VINs.
     const affectedReports = useMemo(
         () => anomalies.reduce((sum, item) => sum + item.reportCount, 0),
         [anomalies]
     );
 
+    // Define the columns and custom cell rendering for the anomalies table.
     const columns: GridColDef[] = [
         {
             field: "vin",
@@ -37,7 +54,7 @@ export default function VinAnomalies() {
             headerName: "Conflicting Attributes",
             minWidth: 250,
             flex: 2,
-            valueGetter: value => Array.isArray(value) ? value.join(", ") : "",
+            valueGetter: (_value, row) => row.conflictingFields.join(", "),
         },
         {
             field: "reportCount",
@@ -92,6 +109,7 @@ export default function VinAnomalies() {
                 <SummaryCard label="Attributes Checked" value={3} />
             </div>
 
+            {/* Main anomalies table and selected VIN's detailed reports. */}
             <div className="overflow-hidden rounded-xl border border-white/10 bg-[#191a22]">
                 <div className="border-b border-white/10 px-4 py-4">
                     <h2 className="text-sm font-semibold">Inconsistent Vehicle Records</h2>
@@ -164,7 +182,7 @@ export default function VinAnomalies() {
                                         {(["Defect ID", "Car Model", "Motor Type", "Design Package"] as const).map(field => (
                                             <td
                                                 key={field}
-                                                className={`px-3 py-2 ${item.conflictingFields.includes(field) ? "text-amber-300" : ""}`}
+                                                className={`px-3 py-2 ${field !== "Defect ID" && item.conflictingFields.includes(field) ? "text-amber-300" : ""}`}
                                             >
                                                 {String(report[field] ?? "—")}
                                             </td>
