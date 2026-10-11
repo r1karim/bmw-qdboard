@@ -1,4 +1,3 @@
-
 import { useMemo, useState } from "react";
 import { useDefects } from "../context/DefectsContext";
 import { useTracking } from "../context/TrackingContext";
