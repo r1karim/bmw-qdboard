@@ -1,3 +1,4 @@
+
 import { useState } from "react";
 import { useSearchParams } from "react-router";
 import { DataGrid, type GridColDef } from "@mui/x-data-grid";
@@ -16,23 +17,28 @@ export type { DefectRow } from "./tableConfig";
  * @param defects - Array of defect reports to display.
  */
 export default function DefectsTable({ defects }: { defects: DefectRow[] }) {
+    // Access saved investigation records and track the defect selected for review.
     const { records } = useTracking();
     const [selectedDefect, setSelectedDefect] = useState<DefectRow | null>(null);
 
+    // Add a unique grid row ID and the saved engineer note to each defect.
     const rows = defects.map((defect, index) => ({
         ...defect,
         id: index,
         engineerNote: records[String(defect["Defect ID"] ?? "")]?.note ?? "",
     }));
 
+    // Read URL query parameters used to initialize table filters.
     const [searchParams] = useSearchParams();
 
+    // Map dashboard navigation parameters to their corresponding dataset columns.
     const urlFilters = [
         { param: "category", field: "Defect Category" },
         { param: "model", field: "Car Model" },
         { param: "defectName", field: "Defect Name" },
     ];
 
+    // Convert available URL parameters into MUI Data Grid filter definitions.
     const initialFilters = urlFilters
         .filter(({ param }) => searchParams.has(param))
         .map(({ param, field }) => ({
@@ -42,6 +48,7 @@ export default function DefectsTable({ defects }: { defects: DefectRow[] }) {
             value: searchParams.get(param) ?? "",
         }));
 
+    // Define investigation actions followed by the original dataset columns.
     const columns: GridColDef[] = [
         {
             field: "flag",
@@ -49,6 +56,7 @@ export default function DefectsTable({ defects }: { defects: DefectRow[] }) {
             width: 65,
             sortable: false,
             filterable: false,
+            // Display the tracking state and open the investigation panel.
             renderCell: params => {
                 const defect = params.row as DefectRow;
                 const defectId = String(defect["Defect ID"] ?? "");
@@ -68,6 +76,7 @@ export default function DefectsTable({ defects }: { defects: DefectRow[] }) {
             headerName: "Engineer Note",
             width: 235,
             sortable: false,
+            // Show an existing note or provide an action to add one.
             renderCell: params => {
                 const defect = params.row as DefectRow;
                 const record = records[String(defect["Defect ID"] ?? "")];
@@ -84,11 +93,13 @@ export default function DefectsTable({ defects }: { defects: DefectRow[] }) {
                 );
             },
         },
+        // Generate columns from the shared dataset configuration.
         ...COLUMNS.map(column => ({
             field: column,
             headerName: column,
             minWidth: 140,
             width: 155,
+            // Display missing or empty values consistently.
             valueFormatter: (value: unknown) =>
                 value == null || value === "" ? "—" : String(value),
         })),
@@ -97,6 +108,7 @@ export default function DefectsTable({ defects }: { defects: DefectRow[] }) {
     return (
         <>
             <div className="w-full min-w-0 overflow-hidden rounded-xl border border-white/10 bg-[#191a22]">
+                {/* Table heading. */}
                 <div className="border-b border-white/10 px-5 py-4">
                     <h2 className="text-sm font-semibold text-white">Defect Records</h2>
                 </div>
@@ -104,9 +116,11 @@ export default function DefectsTable({ defects }: { defects: DefectRow[] }) {
                 <DataGrid
                     rows={rows}
                     columns={columns}
+                    // Enable MUI's built-in toolbar for searching and filtering.
                     showToolbar
                     disableRowSelectionOnClick
                     pageSizeOptions={[10, 25, 50, 100]}
+                    // Apply URL-based filters and configure the initial page and sort order.
                     initialState={{
                         filter: {
                             filterModel: {
@@ -118,6 +132,7 @@ export default function DefectsTable({ defects }: { defects: DefectRow[] }) {
                     }}
                     rowHeight={40}
                     columnHeaderHeight={38}
+                    // Match the grid's headers, cells, toolbar, and footer to the dark dashboard theme.
                     sx={{
                         border: 0,
                         color: "#d4d4d8",
@@ -155,6 +170,7 @@ export default function DefectsTable({ defects }: { defects: DefectRow[] }) {
                 />
             </div>
 
+            {/* Open the investigation panel for the selected defect, or close it by clearing the selection. */}
             <DefectInvestigationPanel
                 defect={selectedDefect}
                 onClose={() => setSelectedDefect(null)}

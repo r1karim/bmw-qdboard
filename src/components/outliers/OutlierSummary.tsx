@@ -2,6 +2,12 @@ import { Gauge, Flag, Percent } from "lucide-react";
 import KpiCard from "../dashboard/KpiCard";
 import type { OutlierMetric, OutlierResult } from "../../utils/outliers";
 
+/**
+ * Props for the outlier analysis summary.
+ *
+ * The selected metric determines how thresholds, flagged observations,
+ * and explanatory descriptions are presented.
+ */
 type Props = {
     metric: OutlierMetric;
     result: OutlierResult;
@@ -9,6 +15,20 @@ type Props = {
     severityThreshold: number;
 };
 
+
+/**
+ * Displays KPI cards and an explanation of the selected outlier analysis.
+ *
+ * Summarizes the detection threshold, number of flagged observations,
+ * and percentage of valid observations flagged.
+ *
+ * Supports resolution time, repeated VIN reports, and severity analysis.
+ *
+ * @param metric - Selected outlier detection metric.
+ * @param result - Calculated outlier detection results.
+ * @param multiplier - IQR multiplier used for resolution time detection.
+ * @param severityThreshold - Maximum severity rating considered critical.
+ */
 export default function OutlierSummary({ metric, result, multiplier, severityThreshold }: Props) {
     return (
         <>

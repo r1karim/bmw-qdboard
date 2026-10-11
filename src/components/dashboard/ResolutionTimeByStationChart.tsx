@@ -1,15 +1,31 @@
+
 import { useMemo } from "react";
 import {BarChart, Bar, XAxis, YAxis, CartesianGrid, Tooltip, ResponsiveContainer, LabelList,} from "recharts";
 import type { Defect } from "../../utils/dashboardAnalytics";
 
+/**
+ * Displays the average defect resolution time for each production station.
+ *
+ * Groups resolved defect reports by Station ID and calculates the mean
+ * resolution time in hours for each station.
+ *
+ * Excludes unresolved reports and records with missing, invalid, or
+ * negative resolution times. Stations are ranked from highest to
+ * lowest average resolution time.
+ *
+ * @param defects - Defect reports from the selected date range.
+ */
 export default function ResolutionTimeByStationChart({defects,}: { defects: Defect[]; }) {
+    // Recalculate station averages only when the input defect data changes.
     const data = useMemo(() => {
+        // Store the total resolution hours and valid report count per station.
         const stations = new Map<
             string,
             { totalHours: number; count: number }
         >();
 
         for (const defect of defects) {
+            // Only completed resolutions contribute to the station averages.
             if (defect["Resolution Status"] !== "Resolved") continue;
 
             const hours = defect["Resolution Time (hours)"];
@@ -24,16 +40,19 @@ export default function ResolutionTimeByStationChart({defects,}: { defects: Defe
                 continue;
             }
 
+            // Group reports by station, using "Unknown" for missing station IDs.
             const station = defect["Station ID"] || 'Unknown';
             if (!stations.has(station)) {
                 stations.set(station, { totalHours: 0, count: 0 });
             }
 
+            // Accumulate the resolution time and report count for this station.
             const entry = stations.get(station)!;
             entry.totalHours += Number(hours);
             entry.count++;
         }
 
+        // Calculate each station's mean resolution time and rank the results.
         return Array.from(stations, ([name, entry]) => ({
             name,
             averageHours: entry.totalHours / entry.count,
@@ -43,6 +62,7 @@ export default function ResolutionTimeByStationChart({defects,}: { defects: Defe
 
     return (
         <div className="min-w-0 rounded-xl border border-white/10 bg-[#191a22] p-5">
+            {/* Chart heading and description. */}
             <div className="mb-5">
                 <h3 className="text-sm font-semibold text-white">
                     Average Resolution Time by Station
@@ -52,22 +72,26 @@ export default function ResolutionTimeByStationChart({defects,}: { defects: Defe
                 </p>
             </div>
 
+            {/* Display an empty state when no valid resolved reports are available. */}
             {data.length === 0 ? (
                 <div className="flex h-64 items-center justify-center text-sm text-zinc-500">
                     No resolved defects with valid resolution times.
                 </div>
             ) : (
                 <div className="h-[350px]">
+                    {/* Resize the chart automatically to fit its container. */}
                     <ResponsiveContainer width="100%" height="100%">
                         <BarChart
                             data={data}
                             margin={{ top: 25, right: 10, left: 0, bottom: 10 }}
                         >
+                            {/* Display horizontal grid lines for comparing resolution times. */}
                             <CartesianGrid
                                 stroke="#292a35"
                                 vertical={false}
                             />
 
+                            {/* Display the production station identifiers. */}
                             <XAxis
                                 dataKey="name"
                                 tick={{ fill: "#a1a1aa", fontSize: 11 }}
@@ -76,6 +100,7 @@ export default function ResolutionTimeByStationChart({defects,}: { defects: Defe
                                 interval={0}
                             />
 
+                            {/* Display average resolution time in hours. */}
                             <YAxis
                                 type="number"
                                 tick={{ fill: "#a1a1aa", fontSize: 11 }}
@@ -84,6 +109,7 @@ export default function ResolutionTimeByStationChart({defects,}: { defects: Defe
                                 tickLine={false}
                             />
 
+                            {/* Show the station average and contributing report count on hover. */}
                             <Tooltip
                                 formatter={(value, name, item) => {
                                     if (name === "averageHours") {
@@ -102,12 +128,14 @@ export default function ResolutionTimeByStationChart({defects,}: { defects: Defe
                                 }}
                             />
 
+                            {/* Render one bar for each station's average resolution time. */}
                             <Bar
                                 dataKey="averageHours"
                                 fill="#8b5cf6"
                                 radius={[4, 4, 0, 0]}
                                 maxBarSize={36}
                             >
+                                {/* Display average hours above each bar, rounded to one decimal. */}
                                 <LabelList
                                     dataKey="averageHours"
                                     position="top"
@@ -121,6 +149,7 @@ export default function ResolutionTimeByStationChart({defects,}: { defects: Defe
                 </div>
             )}
 
+            {/* Explain which defect reports contribute to the averages. */}
             <p className="mt-4 text-xs leading-relaxed text-zinc-500">
                 Calculated using resolved defect reports with recorded
                 resolution times. Unresolved reports and missing values

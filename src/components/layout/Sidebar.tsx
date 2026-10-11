@@ -1,4 +1,3 @@
-
 import {
     LayoutDashboard,
     Table2,
@@ -9,6 +8,7 @@ import {
 } from "lucide-react";
 import { NavLink } from "react-router";
 
+// Define the available workspace pages, their routes, and navigation icons.
 const navigation = [
     { name: "Overview", path: "/", icon: LayoutDashboard },
     { name: "Defect Explorer", path: "/defects", icon: Table2 },
@@ -17,10 +17,21 @@ const navigation = [
     { name: "Anomalies", path: "/anomalies", icon: FileWarning },
 ];
 
+/**
+ * Renders the application's main sidebar navigation.
+ *
+ * Displays BMW QdBoard branding, navigation links to the main
+ * dashboard pages, and a footer with workspace information.
+ *
+ * Uses React Router's NavLink to highlight the currently active page.
+ * The sidebar is visible on large screens and hidden on smaller devices.
+ */
 export default function Sidebar() {
     return (
+        // Fixed-width sidebar, displayed only on large screens and above.
         <aside className="hidden w-[218px] shrink-0 flex-col border-r border-white/[0.07] bg-[#0d0e14] lg:flex">
 
+            {/* Application branding and BMW logo. */}
             <div className="flex h-28 shrink-0 items-center gap-3 border-b border-white/[0.07] px-5">
                 <img
                     src="/BMW.svg.webp"
@@ -45,12 +56,15 @@ export default function Sidebar() {
                     WORKSPACE
                 </p>
 
+                {/* Generate navigation links from the centralized route configuration. */}
                 <div className="space-y-1">
                     {navigation.map(({ name, path, icon: Icon }) => (
                         <NavLink
                             key={path}
                             to={path}
+                            // Match the overview route exactly to avoid highlighting it on other pages.
                             end={path === "/"}
+                            // Apply violet highlighting to the active navigation link.
                             className={({ isActive }) =>
                                 `flex items-center gap-3 rounded-md px-3 py-3 text-xs font-medium transition-colors ${
                                     isActive
@@ -68,11 +82,13 @@ export default function Sidebar() {
 
             {/* Footer */}
             <div className="border-t border-white/[0.07] p-4">
+                {/* Placeholder for a future settings feature; currently not interactive. */}
                 <div className="flex items-center gap-3 rounded-md px-3 py-2.5 text-xs text-zinc-400">
                     <Settings2 size={16} />
                     Settings (disabled)
                 </div>
 
+                {/* Workspace identification. */}
                 <p className="mt-4 px-3 text-[10px] text-zinc-600">
                     QLab · BMW Debrecen
                 </p>

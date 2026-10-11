@@ -1,4 +1,3 @@
-
 import { useMemo, useState } from "react";
 import { DataGrid, type GridColDef } from "@mui/x-data-grid";
 import { AlertTriangle, ChevronDown, ChevronUp } from "lucide-react";
@@ -16,6 +15,7 @@ import { detectVinAnomalies } from "../utils/vinAnomalies";
  * reported vehicle attributes are correct.
  */
 export default function VinAnomalies() {
+    // Access the shared defect dataset and its loading/error states.
     const { defects, loading, error } = useDefects();
 
     // Track the VIN whose detailed reports are currently displayed.
@@ -42,6 +42,7 @@ export default function VinAnomalies() {
             headerName: "VIN",
             minWidth: 200,
             flex: 1,
+            // Highlight VINs with detected attribute inconsistencies.
             renderCell: params => (
                 <span className="flex items-center gap-3 font-medium text-white">
                     <AlertTriangle size={16} className="shrink-0 text-amber-400" />
@@ -54,6 +55,7 @@ export default function VinAnomalies() {
             headerName: "Conflicting Attributes",
             minWidth: 250,
             flex: 2,
+            // Convert the list of conflicting field names into readable text.
             valueGetter: (_value, row) => row.conflictingFields.join(", "),
         },
         {
@@ -68,6 +70,7 @@ export default function VinAnomalies() {
             width: 150,
             sortable: false,
             filterable: false,
+            // Toggle the detailed report comparison for the selected VIN.
             renderCell: params => {
                 const expanded = expandedVin === params.row.vin;
 
@@ -85,16 +88,19 @@ export default function VinAnomalies() {
         },
     ];
 
+    // Display loading feedback while defect records are being retrieved.
     if (loading) {
         return <p className="p-6 text-zinc-400">Loading VIN anomalies...</p>;
     }
 
+    // Display the shared data-loading error instead of incomplete results.
     if (error) {
         return <p className="p-6 text-red-400">{error}</p>;
     }
 
     return (
         <div className="space-y-6 p-6 text-white">
+            {/* Page heading and explanation of the anomaly detection scope. */}
             <div>
                 <h1 className="text-2xl font-semibold">VIN Anomalies</h1>
                 <p className="mt-2 text-sm text-zinc-400">
@@ -103,6 +109,7 @@ export default function VinAnomalies() {
                 </p>
             </div>
 
+            {/* Summarize anomalous VINs, associated reports, and checked attributes. */}
             <div className="grid gap-4 sm:grid-cols-3">
                 <SummaryCard label="Anomalous VINs" value={anomalies.length} />
                 <SummaryCard label="Affected Reports" value={affectedReports} />
@@ -115,6 +122,7 @@ export default function VinAnomalies() {
                     <h2 className="text-sm font-semibold">Inconsistent Vehicle Records</h2>
                 </div>
 
+                {/* Display affected VINs with built-in filtering, sorting, and pagination. */}
                 <DataGrid
                     rows={anomalies}
                     getRowId={row => row.vin}
@@ -125,6 +133,7 @@ export default function VinAnomalies() {
                     columnHeaderHeight={38}
                     pageSizeOptions={[10, 25, 50]}
                     initialState={{
+                        // Show VINs with the most associated reports first.
                         pagination: { paginationModel: { page: 0, pageSize: 10 } },
                         sorting: { sortModel: [{ field: "reportCount", sort: "desc" }] },
                     }}
@@ -151,12 +160,14 @@ export default function VinAnomalies() {
                     localeText={{ noRowsLabel: "No VIN anomalies found." }}
                 />
 
+                {/* Render the expanded comparison beneath the main grid. */}
                 {expandedVin && anomalies.filter(item => item.vin === expandedVin).map(item => (
                     <div key={item.vin} className="space-y-4 border-t border-white/10 bg-[#20212b] p-4">
                         <h3 className="text-sm font-semibold text-white">
                             Reports for {item.vin}
                         </h3>
 
+                        {/* List each conflicting attribute and its reported values. */}
                         <div className="space-y-2">
                             <h4 className="text-xs font-semibold text-zinc-300">Conflicting values</h4>
                             {item.conflictingFields.map(field => (
@@ -167,6 +178,7 @@ export default function VinAnomalies() {
                             ))}
                         </div>
 
+                        {/* Show the source reports so engineers can compare attribute values. */}
                         <div className="overflow-x-auto">
                             <table className="w-full text-left text-xs">
                                 <thead className="border-b border-white/10 text-zinc-400">
@@ -182,6 +194,7 @@ export default function VinAnomalies() {
                                         {(["Defect ID", "Car Model", "Motor Type", "Design Package"] as const).map(field => (
                                             <td
                                                 key={field}
+                                                // Highlight only attributes identified as conflicting.
                                                 className={`px-3 py-2 ${field !== "Defect ID" && item.conflictingFields.includes(field) ? "text-amber-300" : ""}`}
                                             >
                                                 {String(report[field] ?? "—")}
@@ -193,6 +206,7 @@ export default function VinAnomalies() {
                             </table>
                         </div>
 
+                        {/* Clarify that conflicting reports do not establish the correct value. */}
                         <p className="text-xs text-zinc-500">
                             Conflicting records are highlighted. The correct values cannot be determined
                             from defect reports alone.
@@ -204,10 +218,17 @@ export default function VinAnomalies() {
     );
 }
 
+/**
+ * Displays a numeric summary metric in a dashboard-style card.
+ *
+ * @param label - Description of the metric.
+ * @param value - Numeric metric value to display.
+ */
 function SummaryCard({ label, value }: { label: string; value: number }) {
     return (
         <div className="rounded-xl border border-white/10 bg-[#191a22] p-4">
             <p className="text-xs text-zinc-400">{label}</p>
+            {/* Format large values with locale-aware digit separators. */}
             <p className="mt-2 text-2xl font-semibold">{value.toLocaleString()}</p>
         </div>
     );

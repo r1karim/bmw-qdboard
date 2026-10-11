@@ -2,18 +2,36 @@ import { DataGrid, type GridColDef } from "@mui/x-data-grid";
 import type { TrackingRecord } from "../../context/TrackingContext";
 import type { DefectRow } from "../defects/tableConfig";
 
+/**
+ * Combines a saved investigation record with its original defect data.
+ * The defect may be null if the corresponding report cannot be found.
+ */
 type TrackingItem = {
     record: TrackingRecord;
     defect: DefectRow | null;
 };
 
+/**
+ * Props for the investigation tracking table.
+ */
 type Props = {
     items: TrackingItem[];
     onEdit: (defect: DefectRow) => void;
     onUnflag: (defectId: string) => void;
 };
 
+/**
+ * Displays tracked defect investigations in an interactive MUI Data Grid.
+ *
+ * Combines saved investigation information with defect report details
+ * and provides actions for editing investigations or removing flags.
+ *
+ * @param items - Investigation records paired with their defect reports.
+ * @param onEdit - Callback for editing an investigation.
+ * @param onUnflag - Callback for removing a defect from tracking.
+ */
 export default function TrackingTable({ items, onEdit, onUnflag }: Props) {
+    // Transform investigation records into the flat row structure expected by Data Grid.
     const rows = items.map(({ record, defect }) => ({
         id: record.defectId,
         defect: String(defect?.["Defect Name"] ?? "—"),
@@ -28,6 +46,7 @@ export default function TrackingTable({ items, onEdit, onUnflag }: Props) {
         defectRow: defect,
     }));
 
+    // Define the displayed columns, their formatting, and available row actions.
     const columns: GridColDef[] = [
         { field: "id", headerName: "Defect ID", minWidth: 160, flex: 1 },
         { field: "defect", headerName: "Defect", minWidth: 150, flex: 1 },
@@ -38,6 +57,7 @@ export default function TrackingTable({ items, onEdit, onUnflag }: Props) {
             field: "investigation",
             headerName: "Investigation",
             type: "singleSelect",
+            // Restrict filtering options to the supported investigation statuses.
             valueOptions: ["To Review", "Investigating", "Closed"],
             minWidth: 140,
             flex: 1,
@@ -52,6 +72,7 @@ export default function TrackingTable({ items, onEdit, onUnflag }: Props) {
             headerName: "Engineer Note",
             minWidth: 200,
             flex: 1.5,
+            // Truncate long notes while keeping the full text available on hover.
             renderCell: params => (
                 <span
                     className="block truncate"
@@ -66,6 +87,7 @@ export default function TrackingTable({ items, onEdit, onUnflag }: Props) {
             headerName: "Last Updated",
             minWidth: 170,
             flex: 1,
+            // Convert the stored ISO timestamp into a readable local date and time.
             renderCell: params =>
                 new Date(String(params.value)).toLocaleString(),
         },
@@ -75,10 +97,12 @@ export default function TrackingTable({ items, onEdit, onUnflag }: Props) {
             width: 130,
             sortable: false,
             filterable: false,
+            // Provide editing and unflagging actions for each investigation.
             renderCell: params => (
                 <div className="flex h-full items-center gap-3">
                     <button
                         type="button"
+                        // Editing requires the original defect report to be available.
                         disabled={!params.row.defectRow}
                         onClick={() => onEdit(params.row.defectRow)}
                         className="text-violet-400 hover:text-violet-300 disabled:opacity-30"
@@ -103,13 +127,16 @@ export default function TrackingTable({ items, onEdit, onUnflag }: Props) {
                 rows={rows}
                 columns={columns}
                 autoHeight
+                // Prevent row selection when users interact with table cells or actions.
                 disableRowSelectionOnClick
                 pageSizeOptions={[10, 25, 50]}
+                // Display 10 investigations per page initially.
                 initialState={{
                     pagination: {
                         paginationModel: { page: 0, pageSize: 10 },
                     },
                 }}
+                // Apply the dashboard's dark theme to Data Grid elements.
                 sx={{
                     border: 0,
                     color: "#d4d4d8",
@@ -143,9 +170,11 @@ export default function TrackingTable({ items, onEdit, onUnflag }: Props) {
                         backgroundColor: "#191a22",
                     },
                 }}
+                // Show a descriptive message when no investigations match the current filters.
                 localeText={{
                     noRowsLabel: "No matching investigations found.",
                 }}
+                // Enable the built-in Data Grid toolbar for searching and filtering.
                 showToolbar
             />
         </div>

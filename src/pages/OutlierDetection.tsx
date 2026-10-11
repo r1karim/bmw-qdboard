@@ -3,7 +3,7 @@ import OutlierControls from "../components/outliers/OutlierControls";
 import OutlierSummary from "../components/outliers/OutlierSummary";
 import OutlierResultsTable from "../components/outliers/OutlierResultsTable";
 import useOutlierData from "../hooks/useOutlierData";
-import { detectOutliers, type OutlierMetric } from "../utils/outlierAnalytics";
+import { detectOutliers, type OutlierMetric } from "../utils/outliers";
 
 /**
  * Outlier Detection page for identifying unusual production quality records.

@@ -1,4 +1,3 @@
-
 import { useMemo, useState } from "react";
 import { DataGrid, type GridColDef } from "@mui/x-data-grid";
 import { Flag } from "lucide-react";
@@ -7,6 +6,12 @@ import type { DefectRow } from "../defects/tableConfig";
 import DefectInvestigationPanel from "../tracking/DefectInvestigationPanel";
 import { useTracking } from "../../context/TrackingContext";
 
+/**
+ * Props for the outlier results table.
+ *
+ * Contains flagged observations, the active detection metric,
+ * its threshold, and the original defect records.
+ */
 type Props = {
     flagged: OutlierItem[];
     metric: OutlierMetric;
@@ -14,6 +19,18 @@ type Props = {
     defects: DefectRow[];
 };
 
+/**
+ * Displays flagged outliers in an interactive MUI Data Grid.
+ *
+ * Adapts its columns and explanations to the selected outlier metric.
+ * Supports investigation tracking for individual defects and allows
+ * engineers to review the reports associated with repeated VINs.
+ *
+ * @param flagged - Observations identified as outliers.
+ * @param metric - Selected outlier detection metric.
+ * @param threshold - Threshold used to flag observations.
+ * @param defects - Original defect records used for investigation actions.
+ */
 export default function OutlierResultsTable({ flagged, metric, threshold, defects }: Props) {
     const isVin = metric === "vin";
     const isSeverity = metric === "severity";
@@ -39,6 +56,7 @@ export default function OutlierResultsTable({ flagged, metric, threshold, defect
         return map;
     }, [defects]);
 
+    // Configure table columns according to the selected outlier metric.
     const columns: GridColDef[] = [
         { field: "label", headerName: isVin ? "VIN" : "Defect ID", flex: 1, minWidth: 160 },
         ...(!isVin ? [
@@ -120,6 +138,7 @@ export default function OutlierResultsTable({ flagged, metric, threshold, defect
         },
     ];
 
+    // Add a metric-specific explanation describing why each observation was flagged.
     const rows = flagged.map(item => ({
         ...item,
         reason: isSeverity
@@ -162,6 +181,8 @@ export default function OutlierResultsTable({ flagged, metric, threshold, defect
                     />
                 </div>
             </div>
+
+            {/* Display the investigation panel for the currently selected defect. */}
             <DefectInvestigationPanel defect={selectedDefect} onClose={() => setSelectedDefect(null)} />
         </>
     );
