@@ -1,11 +1,12 @@
+
 import { useMemo, useState } from "react";
-import { AlertTriangle, ChevronDown, ChevronUp, Search } from "lucide-react";
+import { DataGrid, type GridColDef } from "@mui/x-data-grid";
+import { AlertTriangle, ChevronDown, ChevronUp } from "lucide-react";
 import { useDefects } from "../context/DefectsContext";
 import { detectVinAnomalies } from "../utils/vinAnomalies";
 
 export default function VinAnomalies() {
     const { defects, loading, error } = useDefects();
-    const [search, setSearch] = useState("");
     const [expandedVin, setExpandedVin] = useState<string | null>(null);
 
     const anomalies = useMemo(
@@ -13,18 +14,59 @@ export default function VinAnomalies() {
         [defects]
     );
 
-    const filtered = useMemo(
-        () =>
-            anomalies.filter(item =>
-                item.vin.toLowerCase().includes(search.toLowerCase().trim())
-            ),
-        [anomalies, search]
-    );
-
     const affectedReports = useMemo(
         () => anomalies.reduce((sum, item) => sum + item.reportCount, 0),
         [anomalies]
     );
+
+    const columns: GridColDef[] = [
+        {
+            field: "vin",
+            headerName: "VIN",
+            minWidth: 200,
+            flex: 1,
+            renderCell: params => (
+                <span className="flex items-center gap-3 font-medium text-white">
+                    <AlertTriangle size={16} className="shrink-0 text-amber-400" />
+                    {params.value}
+                </span>
+            ),
+        },
+        {
+            field: "conflictingFields",
+            headerName: "Conflicting Attributes",
+            minWidth: 250,
+            flex: 2,
+            valueGetter: value => Array.isArray(value) ? value.join(", ") : "",
+        },
+        {
+            field: "reportCount",
+            headerName: "Reports",
+            type: "number",
+            width: 120,
+        },
+        {
+            field: "actions",
+            headerName: "Details",
+            width: 150,
+            sortable: false,
+            filterable: false,
+            renderCell: params => {
+                const expanded = expandedVin === params.row.vin;
+
+                return (
+                    <button
+                        type="button"
+                        onClick={() => setExpandedVin(expanded ? null : params.row.vin)}
+                        className="flex items-center gap-2 text-xs text-violet-400 hover:text-violet-300"
+                    >
+                        {expanded ? "Hide reports" : "View reports"}
+                        {expanded ? <ChevronUp size={15} /> : <ChevronDown size={15} />}
+                    </button>
+                );
+            },
+        },
+    ];
 
     if (loading) {
         return <p className="p-6 text-zinc-400">Loading VIN anomalies...</p>;
@@ -45,167 +87,110 @@ export default function VinAnomalies() {
             </div>
 
             <div className="grid gap-4 sm:grid-cols-3">
-                <SummaryCard
-                    label="Anomalous VINs"
-                    value={anomalies.length}
-                />
-                <SummaryCard
-                    label="Affected Reports"
-                    value={affectedReports}
-                />
-                <SummaryCard
-                    label="Attributes Checked"
-                    value={3}
-                />
+                <SummaryCard label="Anomalous VINs" value={anomalies.length} />
+                <SummaryCard label="Affected Reports" value={affectedReports} />
+                <SummaryCard label="Attributes Checked" value={3} />
             </div>
 
-            <div className="rounded-xl border border-white/10 bg-[#191a22]">
-                <div className="flex flex-col gap-3 border-b border-white/10 p-4 sm:flex-row sm:items-center sm:justify-between">
-                    <h2 className="text-sm font-semibold">
-                        Inconsistent Vehicle Records
-                    </h2>
-
-                    <div className="relative">
-                        <Search
-                            size={15}
-                            className="absolute left-3 top-1/2 -translate-y-1/2 text-zinc-500"
-                        />
-                        <input
-                            type="text"
-                            value={search}
-                            onChange={event => setSearch(event.target.value)}
-                            placeholder="Search VIN..."
-                            className="w-full rounded-lg border border-white/10 bg-[#252631] py-2 pl-9 pr-3 text-sm text-white outline-none placeholder:text-zinc-500 focus:border-violet-500 sm:w-60"
-                        />
-                    </div>
+            <div className="overflow-hidden rounded-xl border border-white/10 bg-[#191a22]">
+                <div className="border-b border-white/10 px-4 py-4">
+                    <h2 className="text-sm font-semibold">Inconsistent Vehicle Records</h2>
                 </div>
 
-                {filtered.length === 0 ? (
-                    <p className="p-6 text-sm text-zinc-400">
-                        No VIN anomalies found.
-                    </p>
-                ) : (
-                    <div className="divide-y divide-white/10">
-                        {filtered.map(item => (
-                            <div key={item.vin}>
-                                <button
-                                    type="button"
-                                    onClick={() =>
-                                        setExpandedVin(
-                                            expandedVin === item.vin
-                                                ? null
-                                                : item.vin
-                                        )
-                                    }
-                                    className="flex w-full items-center gap-4 px-4 py-4 text-left hover:bg-white/5"
-                                >
-                                    <AlertTriangle
-                                        size={17}
-                                        className="shrink-0 text-amber-400"
-                                    />
+                <DataGrid
+                    rows={anomalies}
+                    getRowId={row => row.vin}
+                    columns={columns}
+                    showToolbar
+                    disableRowSelectionOnClick
+                    rowHeight={44}
+                    columnHeaderHeight={38}
+                    pageSizeOptions={[10, 25, 50]}
+                    initialState={{
+                        pagination: { paginationModel: { page: 0, pageSize: 10 } },
+                        sorting: { sortModel: [{ field: "reportCount", sort: "desc" }] },
+                    }}
+                    sx={{
+                        border: 0,
+                        color: "#d4d4d8",
+                        fontSize: 12,
+                        backgroundColor: "#191a22",
+                        "& .MuiDataGrid-columnHeader": {
+                            backgroundColor: "#20212b",
+                            color: "#a1a1aa",
+                        },
+                        "& .MuiDataGrid-cell": {
+                            borderColor: "rgba(255,255,255,0.05)",
+                        },
+                        "& .MuiDataGrid-row:hover": {
+                            backgroundColor: "rgba(255,255,255,0.04)",
+                        },
+                        "& .MuiDataGrid-toolbarContainer": {
+                            padding: "12px 16px",
+                            borderBottom: "1px solid rgba(255,255,255,0.08)",
+                        },
+                    }}
+                    localeText={{ noRowsLabel: "No VIN anomalies found." }}
+                />
 
-                                    <div className="min-w-0 flex-1">
-                                        <p className="truncate text-sm font-medium">
-                                            {item.vin}
-                                        </p>
-                                        <p className="mt-1 text-xs text-zinc-400">
-                                            {item.conflictingFields.join(", ")}
-                                        </p>
-                                    </div>
+                {expandedVin && anomalies.filter(item => item.vin === expandedVin).map(item => (
+                    <div key={item.vin} className="space-y-4 border-t border-white/10 bg-[#20212b] p-4">
+                        <h3 className="text-sm font-semibold text-white">
+                            Reports for {item.vin}
+                        </h3>
 
-                                    <span className="text-xs text-zinc-400">
-                                        {item.reportCount} reports
-                                    </span>
+                        <div className="space-y-2">
+                            <h4 className="text-xs font-semibold text-zinc-300">Conflicting values</h4>
+                            {item.conflictingFields.map(field => (
+                                <p key={field} className="text-sm">
+                                    <span className="text-zinc-400">{field}: </span>
+                                    <span className="text-amber-300">{item.values[field].join(" / ")}</span>
+                                </p>
+                            ))}
+                        </div>
 
-                                    {expandedVin === item.vin ? (
-                                        <ChevronUp size={16} />
-                                    ) : (
-                                        <ChevronDown size={16} />
-                                    )}
-                                </button>
+                        <div className="overflow-x-auto">
+                            <table className="w-full text-left text-xs">
+                                <thead className="border-b border-white/10 text-zinc-400">
+                                <tr>
+                                    {["Defect ID", "Car Model", "Motor Type", "Design Package"].map(column => (
+                                        <th key={column} className="px-3 py-2">{column}</th>
+                                    ))}
+                                </tr>
+                                </thead>
+                                <tbody>
+                                {item.reports.map((report, index) => (
+                                    <tr key={`${String(report["Defect ID"])}-${index}`} className="border-b border-white/5">
+                                        {(["Defect ID", "Car Model", "Motor Type", "Design Package"] as const).map(field => (
+                                            <td
+                                                key={field}
+                                                className={`px-3 py-2 ${item.conflictingFields.includes(field) ? "text-amber-300" : ""}`}
+                                            >
+                                                {String(report[field] ?? "—")}
+                                            </td>
+                                        ))}
+                                    </tr>
+                                ))}
+                                </tbody>
+                            </table>
+                        </div>
 
-                                {expandedVin === item.vin && (
-                                    <div className="space-y-4 border-t border-white/10 bg-[#20212b] p-4">
-                                        <div className="space-y-2">
-                                            <h3 className="text-xs font-semibold text-zinc-300">
-                                                Conflicting values
-                                            </h3>
-
-                                            {item.conflictingFields.map(field => (
-                                                <p key={field} className="text-sm">
-                                                    <span className="text-zinc-400">
-                                                        {field}:
-                                                    </span>{" "}
-                                                    <span className="text-amber-300">
-                                                        {item.values[field].join(" / ")}
-                                                    </span>
-                                                </p>
-                                            ))}
-                                        </div>
-
-                                        <div className="overflow-x-auto">
-                                            <table className="w-full text-left text-xs">
-                                                <thead className="border-b border-white/10 text-zinc-400">
-                                                <tr>
-                                                    <th className="px-3 py-2">Defect ID</th>
-                                                    <th className="px-3 py-2">Car Model</th>
-                                                    <th className="px-3 py-2">Motor Type</th>
-                                                    <th className="px-3 py-2">Design Package</th>
-                                                </tr>
-                                                </thead>
-                                                <tbody>
-                                                {item.reports.map((report, index) => (
-                                                    <tr
-                                                        key={`${String(report["Defect ID"])}-${index}`}
-                                                        className="border-b border-white/5"
-                                                    >
-                                                        <td className="px-3 py-2">
-                                                            {String(report["Defect ID"] ?? "—")}
-                                                        </td>
-                                                        <td className={`px-3 py-2 ${item.conflictingFields.includes("Car Model") ? "text-amber-300" : ""}`}>
-                                                            {String(report["Car Model"] ?? "—")}
-                                                        </td>
-                                                        <td className={`px-3 py-2 ${item.conflictingFields.includes("Motor Type") ? "text-amber-300" : ""}`}>
-                                                            {String(report["Motor Type"] ?? "—")}
-                                                        </td>
-                                                        <td className={`px-3 py-2 ${item.conflictingFields.includes("Design Package") ? "text-amber-300" : ""}`}>
-                                                            {String(report["Design Package"] ?? "—")}
-                                                        </td>
-                                                    </tr>
-                                                ))}
-                                                </tbody>
-                                            </table>
-                                        </div>
-
-                                        <p className="text-xs text-zinc-500">
-                                            Conflicting records are highlighted.
-                                            The correct values cannot be determined
-                                            from defect reports alone.
-                                        </p>
-                                    </div>
-                                )}
-                            </div>
-                        ))}
+                        <p className="text-xs text-zinc-500">
+                            Conflicting records are highlighted. The correct values cannot be determined
+                            from defect reports alone.
+                        </p>
                     </div>
-                )}
+                ))}
             </div>
         </div>
     );
 }
 
-function SummaryCard({
-                         label,
-                         value,
-                     }: {
-    label: string;
-    value: number;
-}) {
+function SummaryCard({ label, value }: { label: string; value: number }) {
     return (
         <div className="rounded-xl border border-white/10 bg-[#191a22] p-4">
             <p className="text-xs text-zinc-400">{label}</p>
-            <p className="mt-2 text-2xl font-semibold">
-                {value.toLocaleString()}
-            </p>
+            <p className="mt-2 text-2xl font-semibold">{value.toLocaleString()}</p>
         </div>
     );
 }

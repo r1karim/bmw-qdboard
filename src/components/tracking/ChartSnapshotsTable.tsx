@@ -1,4 +1,6 @@
+
 import { useState } from "react";
+import { DataGrid, type GridColDef } from "@mui/x-data-grid";
 import {
     deleteChartSnapshot,
     getChartSnapshots,
@@ -34,54 +36,116 @@ export default function ChartSnapshotsTable() {
         refresh();
     }
 
+    const columns: GridColDef[] = [
+        { field: "category", headerName: "Category", minWidth: 130, flex: 1 },
+        {
+            field: "dateFrom",
+            headerName: "Date Range",
+            minWidth: 220,
+            flex: 1,
+            renderCell: params => `${params.row.dateFrom} – ${params.row.dateTo}`,
+        },
+        {
+            field: "reportCount",
+            headerName: "Reports",
+            type: "number",
+            minWidth: 110,
+            flex: 1,
+            valueFormatter: value => Number(value).toLocaleString(),
+        },
+        {
+            field: "note",
+            headerName: "Engineer Note",
+            minWidth: 300,
+            flex: 2,
+            sortable: false,
+            renderCell: params =>
+                editingId === params.row.id ? (
+                    <textarea
+                        aria-label={`Edit note for ${params.row.category}`}
+                        value={draft}
+                        onChange={event => setDraft(event.target.value)}
+                        rows={3}
+                        className="w-full rounded-lg border border-white/10 bg-[#252631] p-2 text-xs text-white outline-none focus:border-violet-500"
+                    />
+                ) : (
+                    <span className="block truncate" title={params.value}>
+                        {params.value}
+                    </span>
+                ),
+        },
+        {
+            field: "createdAt",
+            headerName: "Saved At",
+            minWidth: 190,
+            flex: 1,
+            renderCell: params => new Date(String(params.value)).toLocaleString(),
+        },
+        {
+            field: "actions",
+            headerName: "Actions",
+            width: 160,
+            sortable: false,
+            filterable: false,
+            renderCell: params => (
+                <div className="flex h-full items-center gap-3">
+                    {editingId === params.row.id ? (
+                        <>
+                            <button type="button" disabled={!draft.trim()} onClick={() => saveEdit(params.row.id)}
+                                    className="text-violet-400 hover:text-violet-300 disabled:opacity-30">Save</button>
+                            <button type="button" onClick={() => setEditingId(null)}
+                                    className="text-zinc-400 hover:text-white">Cancel</button>
+                        </>
+                    ) : (
+                        <button type="button" onClick={() => startEdit(params.row)}
+                                className="text-violet-400 hover:text-violet-300">Edit</button>
+                    )}
+                    <button type="button" onClick={() => remove(params.row.id)}
+                            className="text-red-400 hover:text-red-300">Delete</button>
+                </div>
+            ),
+        },
+    ];
+
     return (
-        <div className="w-full overflow-x-auto rounded-xl border border-white/10 bg-[#191a22]">
-            <table className="w-full min-w-[900px] text-left text-xs">
-                <thead className="bg-[#20212b] text-zinc-400">
-                    <tr>
-                        {["Category", "Date Range", "Reports", "Engineer Note", "Saved At", "Actions"].map(column => (
-                            <th key={column} className="px-4 py-3 font-medium">{column}</th>
-                        ))}
-                    </tr>
-                </thead>
-                <tbody>
-                    {snapshots.map(snapshot => (
-                        <tr key={snapshot.id} className="border-t border-white/5 text-zinc-300 hover:bg-white/5">
-                            <td className="px-4 py-3 font-medium text-white">{snapshot.category}</td>
-                            <td className="whitespace-nowrap px-4 py-3">{snapshot.dateFrom} – {snapshot.dateTo}</td>
-                            <td className="px-4 py-3">{snapshot.reportCount.toLocaleString()}</td>
-                            <td className="min-w-64 px-4 py-3">
-                                {editingId === snapshot.id ? (
-                                    <textarea
-                                        aria-label={`Edit note for ${snapshot.category}`}
-                                        value={draft}
-                                        onChange={event => setDraft(event.target.value)}
-                                        rows={3}
-                                        className="w-full rounded-lg border border-white/10 bg-[#252631] p-2 text-xs text-white outline-none focus:border-violet-500"
-                                    />
-                                ) : (
-                                    <span className="whitespace-pre-wrap break-words">{snapshot.note}</span>
-                                )}
-                            </td>
-                            <td className="whitespace-nowrap px-4 py-3">{new Date(snapshot.createdAt).toLocaleString()}</td>
-                            <td className="whitespace-nowrap px-4 py-3">
-                                {editingId === snapshot.id ? (
-                                    <>
-                                        <button type="button" disabled={!draft.trim()} onClick={() => saveEdit(snapshot.id)} className="mr-3 text-violet-400 hover:text-violet-300 disabled:opacity-30">Save</button>
-                                        <button type="button" onClick={() => setEditingId(null)} className="mr-3 text-zinc-400 hover:text-white">Cancel</button>
-                                    </>
-                                ) : (
-                                    <button type="button" onClick={() => startEdit(snapshot)} className="mr-3 text-violet-400 hover:text-violet-300">Edit</button>
-                                )}
-                                <button type="button" onClick={() => remove(snapshot.id)} className="text-red-400 hover:text-red-300">Delete</button>
-                            </td>
-                        </tr>
-                    ))}
-                </tbody>
-            </table>
-            {snapshots.length === 0 && (
-                <p className="p-10 text-center text-sm text-zinc-500">No chart snapshots saved yet.</p>
-            )}
+        <div className="w-full overflow-hidden rounded-xl border border-white/10 bg-[#191a22]">
+            <DataGrid
+                rows={snapshots}
+                columns={columns}
+                showToolbar
+                disableRowSelectionOnClick
+                getRowHeight={({ id }) => editingId === id ? 110 : 40}
+                columnHeaderHeight={38}
+                pageSizeOptions={[10, 25, 50]}
+                initialState={{
+                    pagination: { paginationModel: { page: 0, pageSize: 10 } },
+                    sorting: { sortModel: [{ field: "createdAt", sort: "desc" }] },
+                }}
+                sx={{
+                    border: 0,
+                    color: "#d4d4d8",
+                    fontSize: 12,
+                    backgroundColor: "#191a22",
+                    "& .MuiDataGrid-columnHeader": {
+                        backgroundColor: "#20212b",
+                        color: "#a1a1aa",
+                    },
+                    "& .MuiDataGrid-cell": {
+                        borderColor: "rgba(255,255,255,0.05)",
+                    },
+                    "& .MuiDataGrid-row:hover": {
+                        backgroundColor: "rgba(255,255,255,0.04)",
+                    },
+                    "& .MuiDataGrid-toolbarContainer": {
+                        padding: "12px 16px",
+                        borderBottom: "1px solid rgba(255,255,255,0.08)",
+                    },
+                    "& .MuiDataGrid-footerContainer": {
+                        borderTop: "1px solid rgba(255,255,255,0.08)",
+                    },
+                }}
+                localeText={{ noRowsLabel: "No chart snapshots saved yet." }}
+            />
         </div>
     );
 }
