@@ -1,7 +1,11 @@
+import { DataGrid, type GridColDef } from "@mui/x-data-grid";
 import type { TrackingRecord } from "../../context/TrackingContext";
 import type { DefectRow } from "../defects/tableConfig";
 
-type TrackingItem = { record: TrackingRecord; defect: DefectRow | null };
+type TrackingItem = {
+    record: TrackingRecord;
+    defect: DefectRow | null;
+};
 
 type Props = {
     items: TrackingItem[];
@@ -10,36 +14,140 @@ type Props = {
 };
 
 export default function TrackingTable({ items, onEdit, onUnflag }: Props) {
+    const rows = items.map(({ record, defect }) => ({
+        id: record.defectId,
+        defect: String(defect?.["Defect Name"] ?? "—"),
+        vin: String(defect?.VIN ?? "—"),
+        severity: defect?.["Severity Rating"] == null
+            ? null
+            : Number(defect["Severity Rating"]),
+        resolution: String(defect?.["Resolution Status"] ?? "—"),
+        investigation: record.investigationStatus,
+        note: record.note,
+        updatedAt: record.updatedAt,
+        defectRow: defect,
+    }));
+
+    const columns: GridColDef[] = [
+        { field: "id", headerName: "Defect ID", minWidth: 160, flex: 1 },
+        { field: "defect", headerName: "Defect", minWidth: 150, flex: 1 },
+        { field: "vin", headerName: "VIN", minWidth: 160, flex: 1 },
+        { field: "severity", headerName: "Severity", type: "number", width: 100 },
+        { field: "resolution", headerName: "Resolution", minWidth: 120, flex: 1 },
+        {
+            field: "investigation",
+            headerName: "Investigation",
+            type: "singleSelect",
+            valueOptions: ["To Review", "Investigating", "Closed"],
+            minWidth: 140,
+            flex: 1,
+            renderCell: params => (
+                <span className="inline-block rounded-md px-2 py-1 text-violet-300">
+                    {params.value}
+                </span>
+            ),
+        },
+        {
+            field: "note",
+            headerName: "Engineer Note",
+            minWidth: 200,
+            flex: 1.5,
+            renderCell: params => (
+                <span
+                    className="block truncate"
+                    title={String(params.value ?? "")}
+                >
+                    {params.value || "—"}
+                </span>
+            ),
+        },
+        {
+            field: "updatedAt",
+            headerName: "Last Updated",
+            minWidth: 170,
+            flex: 1,
+            renderCell: params =>
+                new Date(String(params.value)).toLocaleString(),
+        },
+        {
+            field: "actions",
+            headerName: "Actions",
+            width: 130,
+            sortable: false,
+            filterable: false,
+            renderCell: params => (
+                <div className="flex h-full items-center gap-3">
+                    <button
+                        type="button"
+                        disabled={!params.row.defectRow}
+                        onClick={() => onEdit(params.row.defectRow)}
+                        className="text-violet-400 hover:text-violet-300 disabled:opacity-30"
+                    >
+                        Edit
+                    </button>
+                    <button
+                        type="button"
+                        onClick={() => onUnflag(params.row.id)}
+                        className="text-red-400 hover:text-red-300"
+                    >
+                        Unflag
+                    </button>
+                </div>
+            ),
+        },
+    ];
+
     return (
-        <div className="w-full overflow-x-auto rounded-xl border border-white/10 bg-[#191a22]">
-            <table className="w-full min-w-[1000px] text-left text-xs">
-                <thead className="bg-[#20212b] text-zinc-400">
-                <tr>
-                    {["Defect ID", "Defect", "VIN", "Severity", "Resolution", "Investigation", "Engineer Note", "Last Updated", "Actions"].map(column => (
-                        <th key={column} className="px-4 py-3 font-medium">{column}</th>
-                    ))}
-                </tr>
-                </thead>
-                <tbody>
-                {items.map(({ record, defect }) => (
-                    <tr key={record.defectId} className="border-t border-white/5 text-zinc-300 hover:bg-white/5">
-                        <td className="px-4 py-3 font-medium text-white">{record.defectId}</td>
-                        <td className="max-w-48 truncate px-4 py-3" title={String(defect?.["Defect Name"] ?? "")}>{String(defect?.["Defect Name"] ?? "—")}</td>
-                        <td className="px-4 py-3">{String(defect?.VIN ?? "—")}</td>
-                        <td className="px-4 py-3">{String(defect?.["Severity Rating"] ?? "—")}</td>
-                        <td className="px-4 py-3">{String(defect?.["Resolution Status"] ?? "—")}</td>
-                        <td className="px-4 py-3"><span className="rounded-md bg-violet-500/10 px-2 py-1 text-violet-300">{record.investigationStatus}</span></td>
-                        <td className="max-w-64 truncate px-4 py-3" title={record.note}>{record.note || "—"}</td>
-                        <td className="px-4 py-3 whitespace-nowrap">{new Date(record.updatedAt).toLocaleString()}</td>
-                        <td className="whitespace-nowrap px-4 py-3">
-                            <button type="button" disabled={!defect} onClick={() => defect && onEdit(defect)} className="mr-3 text-violet-400 hover:text-violet-300 disabled:opacity-30">Edit</button>
-                            <button type="button" onClick={() => onUnflag(record.defectId)} className="text-red-400 hover:text-red-300">Unflag</button>
-                        </td>
-                    </tr>
-                ))}
-                </tbody>
-            </table>
-            {items.length === 0 && <p className="p-10 text-center text-sm text-zinc-500">No matching investigations found.</p>}
+        <div className="w-full overflow-hidden rounded-xl border border-white/10 bg-[#191a22]">
+            <DataGrid
+                rows={rows}
+                columns={columns}
+                autoHeight
+                disableRowSelectionOnClick
+                pageSizeOptions={[10, 25, 50]}
+                initialState={{
+                    pagination: {
+                        paginationModel: { page: 0, pageSize: 10 },
+                    },
+                }}
+                sx={{
+                    border: 0,
+                    color: "#d4d4d8",
+                    fontSize: 12,
+                    backgroundColor: "#191a22",
+                    "& .MuiDataGrid-columnHeaders": {
+                        backgroundColor: "#20212b",
+                        color: "#a1a1aa",
+                    },
+                    "& .MuiDataGrid-columnHeader": {
+                        backgroundColor: "#20212b",
+                    },
+                    "& .MuiDataGrid-cell": {
+                        borderColor: "rgba(255,255,255,0.05)",
+                        display: "flex",
+                        alignItems: "center",
+                    },
+                    "& .MuiDataGrid-row:hover": {
+                        backgroundColor: "rgba(255,255,255,0.05)",
+                    },
+                    "& .MuiDataGrid-footerContainer": {
+                        borderColor: "rgba(255,255,255,0.1)",
+                    },
+                    "& .MuiTablePagination-root": {
+                        color: "#a1a1aa",
+                    },
+                    "& .MuiSvgIcon-root": {
+                        color: "#a1a1aa",
+                    },
+                    "& .MuiDataGrid-overlay": {
+                        backgroundColor: "#191a22",
+                    },
+                }}
+                localeText={{
+                    noRowsLabel: "No matching investigations found.",
+                }}
+                showToolbar
+            />
         </div>
     );
 }

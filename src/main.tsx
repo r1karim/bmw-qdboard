@@ -4,12 +4,16 @@ import { DefectsProvider } from "./context/DefectsContext";
 import './index.css'
 import App from './App.tsx'
 import {TrackingProvider} from "./context/TrackingContext.tsx";
+import { ThemeProvider } from "@mui/material/styles";
+import { theme } from "./theme";
 
 createRoot(document.getElementById("root")!).render(
     <StrictMode>
         <DefectsProvider>
             <TrackingProvider>
-                <App />
+                <ThemeProvider theme={theme}>
+                    <App />
+                </ThemeProvider>
             </TrackingProvider>
         </DefectsProvider>
     </StrictMode>
