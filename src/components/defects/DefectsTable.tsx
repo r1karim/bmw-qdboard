@@ -1,4 +1,5 @@
 import { useState } from "react";
+import { useSearchParams } from "react-router";
 import { DataGrid, type GridColDef } from "@mui/x-data-grid";
 import { Flag, MessageSquareText } from "lucide-react";
 import { useTracking } from "../../context/TrackingContext";
@@ -23,6 +24,23 @@ export default function DefectsTable({ defects }: { defects: DefectRow[] }) {
         id: index,
         engineerNote: records[String(defect["Defect ID"] ?? "")]?.note ?? "",
     }));
+
+    const [searchParams] = useSearchParams();
+
+    const urlFilters = [
+        { param: "category", field: "Defect Category" },
+        { param: "model", field: "Car Model" },
+        { param: "defectName", field: "Defect Name" },
+    ];
+
+    const initialFilters = urlFilters
+        .filter(({ param }) => searchParams.has(param))
+        .map(({ param, field }) => ({
+            id: field,
+            field,
+            operator: "equals",
+            value: searchParams.get(param) ?? "",
+        }));
 
     const columns: GridColDef[] = [
         {
@@ -81,9 +99,6 @@ export default function DefectsTable({ defects }: { defects: DefectRow[] }) {
             <div className="w-full min-w-0 overflow-hidden rounded-xl border border-white/10 bg-[#191a22]">
                 <div className="border-b border-white/10 px-5 py-4">
                     <h2 className="text-sm font-semibold text-white">Defect Records</h2>
-                    <p className="mt-1 text-xs text-zinc-500">
-                        {defects.length.toLocaleString()} reports
-                    </p>
                 </div>
 
                 <DataGrid
@@ -93,6 +108,11 @@ export default function DefectsTable({ defects }: { defects: DefectRow[] }) {
                     disableRowSelectionOnClick
                     pageSizeOptions={[10, 25, 50, 100]}
                     initialState={{
+                        filter: {
+                            filterModel: {
+                                items: initialFilters,
+                            },
+                        },
                         pagination: { paginationModel: { page: 0, pageSize: 25 } },
                         sorting: { sortModel: [{ field: "Report Date", sort: "desc" }] },
                     }}
