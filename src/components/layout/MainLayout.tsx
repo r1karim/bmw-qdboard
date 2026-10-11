@@ -28,7 +28,7 @@ export default function MainLayout({ children }: MainLayoutProps) {
         // Share the selected date range across the header and page content.
         <DateRangeProvider>
             {/* Full-height application container with a desktop flex layout. */}
-            <div className="h-screen overflow-hidden bg-[#101116] text-zinc-100 lg:flex">
+            <div className="min-h-screen bg-[#101116] text-zinc-100 lg:flex lg:h-screen lg:overflow-hidden">
                 {/* Persistent navigation sidebar on large screens. */}
                 <Sidebar />
 
