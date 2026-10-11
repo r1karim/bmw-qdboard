@@ -1,8 +1,8 @@
-import type { OutlierDefect, OutlierItem, OutlierResult } from "./types";
+import type {Defect, OutlierItem, OutlierResult} from "./types";
 import { getValidNumber, isUnresolved, makeItem, makeResult } from "./shared";
 
 export function detectSeverity(
-    defects: OutlierDefect[],
+    defects: Defect[],
     severityThreshold: number,
     unresolvedOnly: boolean
 ): OutlierResult {

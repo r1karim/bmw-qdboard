@@ -1,4 +1,4 @@
-import type { OutlierDefect, OutlierItem, OutlierMetric, OutlierResult } from "./types";
+import type { Defect, OutlierItem, OutlierMetric, OutlierResult } from "./types";
 
 export function getValidNumber(value: unknown): number | null {
     if (value === null || value === undefined || value === "") return null;
@@ -11,7 +11,7 @@ export function isUnresolved(status?: string): boolean {
     return normalized === "open" || normalized === "in progress";
 }
 
-export function makeItem(defect: OutlierDefect, value: number): OutlierItem {
+export function makeItem(defect: Defect, value: number): OutlierItem {
     return {
         id: String(defect["Defect ID"]),
         label: String(defect["Defect ID"]),

@@ -1,5 +1,4 @@
-
-import type { OutlierDefect, OutlierItem, OutlierResult } from "./types";
+import type { Defect, OutlierItem, OutlierResult } from "./types";
 import { getValidNumber, isUnresolved, makeItem, makeResult } from "./shared";
 
 function quantile(sorted: number[], p: number): number {
@@ -15,10 +14,7 @@ function quantile(sorted: number[], p: number): number {
         (sorted[upper] - sorted[lower]) * (index - lower);
 }
 
-function getDurationItems(
-    defects: OutlierDefect[],
-    referenceDate: Date
-): OutlierItem[] {
+function getDurationItems(defects: Defect[], referenceDate: Date): OutlierItem[] {
     return defects.flatMap((defect) => {
         const status = defect["Resolution Status"]?.trim().toLowerCase();
         let value: number | null = null;
@@ -32,8 +28,7 @@ function getDurationItems(
 
             if (Number.isNaN(reportedAt.getTime())) return [];
 
-            value =
-                (referenceDate.getTime() - reportedAt.getTime()) /
+            value = (referenceDate.getTime() - reportedAt.getTime()) /
                 (1000 * 60 * 60);
 
             if (value < 0) return [];
@@ -46,11 +41,11 @@ function getDurationItems(
 }
 
 export function detectResolution(
-    defects: OutlierDefect[],
+    defects: Defect[],
     multiplier: number,
     unresolvedOnly: boolean,
     referenceDate: Date,
-    baselineDefects: OutlierDefect[] = defects
+    baselineDefects: Defect[] = defects
 ): OutlierResult {
     // Global baseline: independent of the selected date range.
     const baselineItems = getDurationItems(
@@ -59,6 +54,7 @@ export function detectResolution(
     );
 
     const sorted = baselineItems
+        .filter((item) => !isUnresolved(item.status))
         .map((item) => item.value)
         .sort((a, b) => a - b);
 

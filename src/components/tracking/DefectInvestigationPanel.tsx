@@ -1,6 +1,7 @@
 import { useEffect, useState } from "react";
 import { Flag, X } from "lucide-react";
 import { useTracking, type InvestigationStatus } from "../../context/TrackingContext";
+import AIInvestigation from "./AIInvestigation";
 import type { DefectRow } from "../defects/tableConfig";
 
 type Props = { defect: DefectRow | null; onClose: () => void };
@@ -56,6 +57,7 @@ export default function DefectInvestigationPanel({ defect, onClose }: Props) {
                         <label htmlFor="investigation-note" className="mb-2 block text-xs font-medium text-zinc-300">Engineer note</label>
                         <textarea id="investigation-note" value={note} onChange={event => setNote(event.target.value)} rows={7} placeholder="Describe the issue, findings, or next steps..." className="w-full resize-y rounded-lg border border-white/10 bg-[#252631] p-3 text-sm text-white outline-none placeholder:text-zinc-500 focus:border-violet-500" />
                     </div>
+                    <AIInvestigation key={defectId} defect={defect} />
                     <div className="mt-auto flex flex-wrap items-center justify-between gap-3 border-t border-white/10 pt-5">
                         {record ? <button type="button" onClick={() => { if (window.confirm(`Remove ${defectId} from investigation tracking? Its note will also be deleted.`)) { unflag(defectId); onClose(); } }} className="flex items-center gap-2 text-xs text-red-400 hover:text-red-300"><Flag size={14} /> Unflag defect</button> : <span className="text-xs text-zinc-500">Saving will flag this defect.</span>}
                         <button type="submit" className="rounded-lg bg-violet-600 px-4 py-2 text-sm font-medium text-white hover:bg-violet-500">Save investigation</button>

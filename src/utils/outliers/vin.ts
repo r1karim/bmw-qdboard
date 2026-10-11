@@ -1,7 +1,7 @@
-import type { OutlierDefect, OutlierItem, OutlierResult } from "./types";
+import type { Defect, OutlierItem, OutlierResult } from "./types";
 import { isUnresolved, makeResult } from "./shared";
 
-export function detectVin(defects: OutlierDefect[], unresolvedOnly: boolean): OutlierResult {
+export function detectVin(defects: Defect[], unresolvedOnly: boolean): OutlierResult {
     const counts = new Map<string, number>();
     for (const defect of defects) {
         const vin = defect.VIN?.trim();

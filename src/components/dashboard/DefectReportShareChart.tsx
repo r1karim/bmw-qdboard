@@ -1,4 +1,3 @@
-
 import { useMemo, useState } from "react";
 import {
     BarChart,
@@ -15,11 +14,7 @@ import type { Defect } from "../../utils/dashboardAnalytics";
 
 type GroupBy = "Car Model" | "Motor Type" | "Design Package";
 
-export default function DefectReportShareChart({
-                                                   defects,
-                                               }: {
-    defects: Defect[];
-}) {
+export default function DefectReportShareChart({defects}: { defects: Defect[]; }) {
     const [groupBy, setGroupBy] = useState<GroupBy>("Car Model");
 
     const data = useMemo(() => {
