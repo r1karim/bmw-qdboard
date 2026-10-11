@@ -4,7 +4,7 @@ import {
     Table2,
     ScanSearch,
     ClipboardCheck,
-    FlaskConical,
+    FileWarning,
     Settings2,
 } from "lucide-react";
 import { NavLink } from "react-router";
@@ -14,7 +14,7 @@ const navigation = [
     { name: "Defect Explorer", path: "/defects", icon: Table2 },
     { name: "Outlier Detection", path: "/outliers", icon: ScanSearch },
     { name: "Tracking", path: "/tracking", icon: ClipboardCheck },
-    { name: "Research & Insights", path: "/insights", icon: FlaskConical },
+    { name: "Anomalies", path: "/anomalies", icon: FileWarning },
 ];
 
 export default function Sidebar() {
@@ -70,7 +70,7 @@ export default function Sidebar() {
             <div className="border-t border-white/[0.07] p-4">
                 <div className="flex items-center gap-3 rounded-md px-3 py-2.5 text-xs text-zinc-400">
                     <Settings2 size={16} />
-                    Settings
+                    Settings (disabled)
                 </div>
 
                 <p className="mt-4 px-3 text-[10px] text-zinc-600">

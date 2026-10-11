@@ -1,23 +1,8 @@
-
 import { useMemo } from "react";
-import {
-    BarChart,
-    Bar,
-    XAxis,
-    YAxis,
-    CartesianGrid,
-    Tooltip,
-    ResponsiveContainer,
-    LabelList,
-} from "recharts";
-
+import {BarChart, Bar, XAxis, YAxis, CartesianGrid, Tooltip, ResponsiveContainer, LabelList,} from "recharts";
 import type { Defect } from "../../utils/dashboardAnalytics";
 
-export default function ResolutionTimeByStationChart({
-                                                         defects,
-                                                     }: {
-    defects: Defect[];
-}) {
+export default function ResolutionTimeByStationChart({defects,}: { defects: Defect[]; }) {
     const data = useMemo(() => {
         const stations = new Map<
             string,

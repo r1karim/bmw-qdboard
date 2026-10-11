@@ -10,10 +10,7 @@ type Props = {
     onClearAll: () => void;
 };
 
-export default function DefectFilters({
-    options, selected, activeFilters, filteredCount, totalCount,
-    onFilterChange, onClearAll,
-}: Props) {
+export default function DefectFilters({options, selected, activeFilters, filteredCount, totalCount, onFilterChange, onClearAll,}: Props) {
     return (
         <div className="rounded-xl border border-white/10 bg-[#191a22] p-4">
             <div className="mb-4 flex items-center justify-between gap-3">
